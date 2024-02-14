@@ -15,9 +15,6 @@ from sklearn.model_selection import train_test_split
 from transformers import AutoProcessor, AutoModel, get_linear_schedule_with_warmup
 import os
 from tqdm import tqdm
-# np.random.seed(0)
-# os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   
-#os.environ["CUDA_VISIBLE_DEVICES"]='0,1,2,3'
 import sys
 import argparse
 
@@ -64,35 +61,10 @@ class CreateDataset(torch.utils.data.Dataset):
             pro_video = processed_video['pixel_values']
             self.processed_video.append(pro_video)
             self.processed_label.append(label)
-        # self.processed_video = self.processed_video[:2000]
-        # self.processed_label = self.processed_label[:2000]
-            # if index == 2000:
-            #     break
-        # self.processed_video = np.stack(self.processed_video)
-        print(self.processed_label.count(0),flush=True)
-        print(self.processed_label.count(1),flush=True)
-        print(self.processed_label.count(2),flush=True)
-        print(self.processed_label.count(3),flush=True)
-        print(self.processed_label.count(4),flush=True)
-        print(self.processed_label.count(5),flush=True)
     def __len__(self):
         return len(self.processed_label)
 
     def __getitem__(self,item):
-        # print("------------------")
-        # print(item)
-        # print(self.videos_file[item])
-        # print("------------------")
-        
-        # video_file = self.videos_file[item]
-        # label = self.labels[item]
-        # video = load_video(video_file)
-        # processed_video = self.processor(videos=list(video), return_tensors="pt")
-        # # print(processed_video['pixel_values'].shape)
-        # processed_video['pixel_values'] = processed_video['pixel_values']
-        # print(item)
-        # print(self.processed_video[item].shape)
-        # print(self.labels[item])
         return {
             'input':self.processed_video[item],
             'label': torch.tensor(self.processed_label[item])
@@ -497,6 +469,58 @@ class InceptionI3d(nn.Module):
                 x = self._modules[end_point](x)
         return self.avg_pool(x)
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="I3D")
+    parser.add_argument(
+        "--load_pre_trained_model_state", 
+        required=False,
+        type=str,
+        default=None
+    )
+    parser.add_argument(
+        "--pre_trained_I3D_model", 
+        required=False,
+        type=str,
+        default=None
+    )
+
+    parser.add_argument(
+        "--train", 
+        required=True,
+        type=bool,
+        default=True
+    )
+
+    parser.add_argument(
+        "--learning_rate", 
+        required=False,
+        type=float,
+        default=1e-5
+    )
+
+    parser.add_argument(
+        "--epoch", 
+        required=False,
+        type=float,
+        default=20
+    )
+
+    parser.add_argument(
+        "--label_number", 
+        required=False,
+        type=float,
+        default=9
+    )
+
+    parser.add_argument(
+        "--save_checkpoint_dir", 
+        required=False,
+        type=str,
+        default="./checkpoints.pt"
+    )
+
+    return parser.parse_args()
+
 def find_video_files(directory):
     video_files = []
     for root, dirs, files in os.walk(directory):
@@ -528,7 +552,6 @@ def train_model(model, data_loader, loss_fn, optimizer, scheduler, n_examples):
         optimizer.step()
         scheduler.step()
         optimizer.zero_grad()
-        # print("finish update....")
         
     return correct_predictions.double() / n_examples, np.mean(losses)
 
@@ -564,22 +587,10 @@ def eval_model(model, data_loader, loss_fn, n_examples):
         print(classification_report(all_labels, all_preds))    
         return correct_predictions.double() / len(data_loader.dataset), np.mean(losses)
 
-def run():
+def run(args):
     # setup dataset
-    if train :
+    if args.train:
         print("load data....")
-        
-        # label0_path = find_video_files("./invid/clip")[1000:2000]
-        # label1_path = find_video_files("./i2vgen-xl/outputs/invid/i2v")
-        # label0_path = find_video_files("./Hotshot-XL/outputs/webvid")
-        # label1_path = find_video_files("./i2vgen-xl/outputs/webvid/i2v")
-        # label2_path = find_video_files("./i2vgen-xl/outputs/webvid/t2v")
-        # label3_path = find_video_files("./LaVie/res/base/webvid")
-        # label4_path = find_video_files("./SEINE/results/webvid/i2v")
-        # label5_path = find_video_files("./Show-1/outputs/webvid")
-        # label6_path = find_video_files("./video_prevention/outputs/webvid/svd_xt")
-        # label7_path = find_video_files("./VideoCrafter/results/webvid/i2v")
-        # label8_path = find_video_files("./VideoCrafter/results/webvid/t2v")
         label0_path = find_video_files("./Hotshot-XL/outputs/invid")
         label1_path = find_video_files("./i2vgen-xl/outputs/invid/i2v")
         label2_path = find_video_files("./i2vgen-xl/outputs/invid/t2v")
@@ -618,11 +629,6 @@ def run():
         label7_path = np.array(label7_path)
         label8_path = np.array(label8_path)
 
-
-        # labels = np.concatenate((label0,label1))
-        
-        # video_path = np.concatenate((label0_path,label1_path))
-
         labels = np.concatenate((label0,label1,label2,label3,label4,label5,label6,label7,label8))
         
         video_path = np.concatenate((label0_path,label1_path,label2_path,label3_path,label4_path,label5_path,label6_path,label7_path,label8_path))
@@ -632,7 +638,7 @@ def run():
         data['labels'] = labels
 
         
-        processor = AutoProcessor.from_pretrained("microsoft/xclip-large-patch14", cache_dir="/scratch/trv3px/huggingface/hub")
+        processor = AutoProcessor.from_pretrained("microsoft/xclip-large-patch14")
         df_data = pd.DataFrame(data)
         df_train, df_val = train_test_split(df_data,test_size = 0.2, random_state = 2024, stratify=df_data['labels'])
         df_train = df_train.reset_index(drop=True)
@@ -640,12 +646,12 @@ def run():
         train_data_loader = VideoDataLoader(df_train,processor,4)
         val_data_loader = VideoDataLoader(df_val,processor,4)
         print("load model....",flush=True)
-        EPOCHS = 20
+        EPOCHS = args.epoch
 
-        LR = 1e-5
+        LR = args.learning_rate
         i3d = InceptionI3d(400, in_channels=3)
-        i3d.load_state_dict(torch.load('models/rgb_imagenet.pt'))
-        i3d.replace_logits(9)
+        i3d.load_state_dict(torch.load(args.pre_trained_I3D_model))
+        i3d.replace_logits(args.label_number)
         i3d = i3d.to("cuda:0")
         print("start training...",flush=True)
         optimizer = AdamW(i3d.parameters(), lr = LR)
@@ -665,19 +671,9 @@ def run():
             
             val_acc, val_loss = eval_model(i3d, val_data_loader, loss_fn, len(df_val))
             print(f'Val Loss: {val_loss} ; Val Accuracy: {val_acc}',flush=True)
-        torch.save(i3d.state_dict(), f'invid_I3D_ST_best_model.pth')
+        torch.save(i3d.state_dict(), args.save_checkpoint_dir)
     else:
         print("load data....")
-        
-        # label0_path = find_video_files("./invid/clip")[1000:2000]
-        # label1_path = find_video_files("./video_prevention/outputs/Invid/svd_xt")
-        # label0 = np.full(len(label0_path),0)
-        # label1 = np.full(len(label1_path),1)
-        # label0_path = np.array(label0_path)
-        # label1_path = np.array(label1_path)
-        # labels = np.concatenate((label0,label1))
-        
-        # video_path = np.concatenate((label0_path,label1_path))
         label0_path = find_video_files("./Hotshot-XL/outputs/webvid")
         label1_path = find_video_files("./i2vgen-xl/outputs/webvid/i2v")
         label2_path = find_video_files("./i2vgen-xl/outputs/webvid/t2v")
@@ -717,11 +713,6 @@ def run():
         label7_path = np.array(label7_path)
         label8_path = np.array(label8_path)
 
-
-        # labels = np.concatenate((label0,label1))
-        
-        # video_path = np.concatenate((label0_path,label1_path))
-
         labels = np.concatenate((label0,label1,label2,label3,label4,label5,label6,label7,label8))
         
         video_path = np.concatenate((label0_path,label1_path,label2_path,label3_path,label4_path,label5_path,label6_path,label7_path,label8_path))
@@ -732,28 +723,15 @@ def run():
         data['labels'] = labels
 
         
-        processor = AutoProcessor.from_pretrained("microsoft/xclip-large-patch14", cache_dir="/scratch/trv3px/huggingface/hub")
+        processor = AutoProcessor.from_pretrained("microsoft/xclip-large-patch14")
         df_data = pd.DataFrame(data)
-        # df_train, df_val = train_test_split(df_data,test_size = 0.2, random_state = 2024, stratify=df_data['labels'])
-        # df_train = df_train.reset_index(drop=True)
-        # df_val = df_val.reset_index(drop=True)
-        # train_data_loader = VideoDataLoader(df_train,processor,4)
         val_data_loader = VideoDataLoader(df_data,processor,4)
         print("load model....",flush=True)
-        EPOCHS = 1
-
-        LR = 1e-5
         i3d = InceptionI3d(400, in_channels=3)
-        i3d.replace_logits(9)
-        i3d.load_state_dict(torch.load("./invid_I3D_ST_best_model.pth"))
+        i3d.replace_logits(args.label_number)
+        i3d.load_state_dict(torch.load(args.load_pre_trained_model_state))
         i3d = i3d.to("cuda:0")
         print("start training...",flush=True)
-        optimizer = AdamW(i3d.parameters(), lr = LR)
-        total_steps = len(val_data_loader) * EPOCHS
-
-        scheduler = get_linear_schedule_with_warmup(optimizer, 
-                                                num_warmup_steps = 0, 
-                                                num_training_steps = total_steps)
         loss_fn = torch.nn.CrossEntropyLoss()
         val_acc, val_loss = eval_model(i3d, val_data_loader, loss_fn, len(val_data_loader.dataset))
         print(f'Val Loss: {val_loss} ; Val Accuracy: {val_acc}',flush=True)
@@ -762,5 +740,5 @@ def run():
 
 if __name__ == '__main__':
     # need to add argparse
-    train = False
-    run()
+    args = parse_args()
+    run(args)

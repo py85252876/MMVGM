@@ -14,6 +14,7 @@ from transformers import AutoProcessor, XCLIPVisionModel, get_linear_schedule_wi
 # from huggingface_hub import hf_hub_download
 from tqdm import tqdm
 np.random.seed(0)
+import argparse
 
 
 
@@ -178,6 +179,52 @@ def find_video_files(directory):
                 video_files.append(full_path)
     return video_files
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="MAE")
+    parser.add_argument(
+        "--load_pre_trained_model_state", 
+        required=False,
+        type=str,
+        default=None
+    )
+
+    parser.add_argument(
+        "--train", 
+        required=True,
+        type=bool,
+        default=True
+    )
+
+    parser.add_argument(
+        "--learning_rate", 
+        required=False,
+        type=float,
+        default=1e-5
+    )
+
+    parser.add_argument(
+        "--epoch", 
+        required=False,
+        type=float,
+        default=20
+    )
+
+    parser.add_argument(
+        "--label_number", 
+        required=False,
+        type=float,
+        default=9
+    )
+
+    parser.add_argument(
+        "--save_checkpoint_dir", 
+        required=False,
+        type=str,
+        default="./checkpoints.pt"
+    )
+
+    return parser.parse_args()
+
 def train_model(model, data_loader, loss_fn, optimizer, scheduler, n_examples):
     model = model.train()
     losses = []
@@ -239,51 +286,7 @@ def eval_model(model, data_loader, loss_fn, n_examples):
 
 
 def main():
-    if train:
-        # label1_path = find_video_files("./i2vgen-xl/outputs/webvid/i2v")
-        # label1_path.extend(find_video_files("./Hotshot-XL/outputs/webvid"))
-        # label1_path.extend(find_video_files("./i2vgen-xl/outputs/webvid/t2v"))
-        # label1_path.extend(find_video_files("./Show-1/outputs/webvid"))
-        # label1_path.extend(find_video_files("./VideoCrafter/results/webvid/i2v"))
-        # label1_path.extend(find_video_files("./VideoCrafter/results/webvid/t2v"))
-        # label1_path.extend(find_video_files("./SEINE/results/webvid/i2v"))
-        # label0_path = find_video_files("./invid/clip")
-
-
-        # label1_path = find_video_files("./i2vgen-xl/outputs/webvid/i2v")
-        # label0_path = find_video_files("./webvid/data/videos/000001_000050")[1000:2000]
-
-        # label0_path.extend(find_video_files("./webvid/data/videos/000051_000100"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000101_000150"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000151_000200"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000201_000250"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000251_000300"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000301_000350"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000351_000400"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000401_000450"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000451_000500"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000501_000550"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000551_000600"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000601_000650"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000651_000700"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000701_000750"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000751_000800"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000801_000850"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000851_000900"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000901_000950"))
-        # label0_path.extend(find_video_files("./webvid/data/videos/000951_001000"))
-        
-
-        # label1 = np.full(len(label1_path),1)
-        # label0 = np.full(len(label0_path),0)
-        # print(len(label1_path))
-        # print(len(label0_path))
-        # label0_path = np.array(label0_path)
-        # label1_path = np.array(label1_path)
-
-        # labels = np.concatenate((label1,label0))
-        
-        # video_path = np.concatenate((label1_path,label0_path))
+    if args.train:
 
         label0_path = find_video_files("./Hotshot-XL/outputs/webvid")
         label1_path = find_video_files("./i2vgen-xl/outputs/webvid/i2v")
@@ -296,17 +299,6 @@ def main():
         label8_path = find_video_files("./VideoCrafter/results/webvid/t2v")
 
 
-        # label0_path = find_video_files("./Hotshot-XL/outputs/invid")
-        # label1_path = find_video_files("./i2vgen-xl/outputs/invid/i2v")
-        # label2_path = find_video_files("./i2vgen-xl/outputs/invid/t2v")
-        # label3_path = find_video_files("./LaVie/res/base/invid")
-        # label4_path = find_video_files("./SEINE/results/invid/i2v")
-        # label5_path = find_video_files("./Show-1/outputs/invid")
-        # label6_path = find_video_files("./video_prevention/outputs/Invid/svd_xt")
-        # label7_path = find_video_files("./VideoCrafter/results/invid/i2v")
-        # label8_path = find_video_files("./VideoCrafter/results/invid/t2v")
-
-
         label0 = np.full(len(label0_path),0)
         label1 = np.full(len(label1_path),1)
         label2 = np.full(len(label2_path),2)
@@ -316,7 +308,6 @@ def main():
         label6 = np.full(len(label6_path),6)
         label7 = np.full(len(label7_path),7)
         label8 = np.full(len(label8_path),8)
-        # label6 = np.full(len(label6_path),6)
         print(len(label0))
         print(len(label1))
         print(len(label2))
@@ -335,24 +326,14 @@ def main():
         label6_path = np.array(label6_path)
         label7_path = np.array(label7_path)
         label8_path = np.array(label8_path)
-        # label6_path = np.array(label6_path)
 
 
         labels = np.concatenate((label0,label1,label2,label3,label4,label5,label6,label7,label8))
         
         video_path = np.concatenate((label0_path,label1_path,label2_path,label3_path,label4_path,label5_path,label6_path,label7_path,label8_path))
-        # print(len(video_path))
-        # return
         print("load data...")
-        processor = AutoImageProcessor.from_pretrained("MCG-NJU/videomae-base", cache_dir="/scratch/trv3px/huggingface/hub")
-        model = VideoMAEForVideoClassification.from_pretrained("MCG-NJU/videomae-base", cache_dir="/scratch/trv3px/huggingface/hub",num_labels = 9)
-        # processor = AutoProcessor.from_pretrained("microsoft/xclip-large-patch14", cache_dir="/scratch/trv3px/huggingface/hub")
-        # model = AutoModel.from_pretrained("microsoft/xclip-large-patch14", cache_dir="/scratch/trv3px/huggingface/hub")
-        # mit = AutoModel.from_pretrained("microsoft/xclip-large-patch14", cache_dir="/scratch/trv3px/huggingface/hub")
-        # print(xclip.config)
-        # print(mit.config)
-        # binary_cla = BinaryClassifier(768, num_classes = 9)
-        # video_cls = VideoClassifier(model,binary_cla)
+        processor = AutoImageProcessor.from_pretrained("MCG-NJU/videomae-base")
+        model = VideoMAEForVideoClassification.from_pretrained("MCG-NJU/videomae-base",num_labels = args.label_number)
         video_cls = model
         video_cls = video_cls.to("cuda:0")
         print("load model...")
@@ -367,9 +348,9 @@ def main():
         train_data_loader = CreateDataLoader(df_train,processor,4)
         val_data_loader = CreateDataLoader(df_val,processor,4)
 
-        EPOCHS = 10
+        EPOCHS = args.epoch
 
-        LR = 1e-5
+        LR = args.learning_rate
 
         optimizer = AdamW(video_cls.parameters(), lr = LR)
         total_steps = len(train_data_loader) * EPOCHS
@@ -389,9 +370,8 @@ def main():
             
             val_acc, val_loss = eval_model(video_cls, val_data_loader, loss_fn, len(df_val))
             print(f'Val Loss: {val_loss} ; Val Accuracy: {val_acc}')
-        torch.save(video_cls.state_dict(), f'webvid_MAE_ST_best_model.pth')
+        torch.save(video_cls.state_dict(), args.save_checkpoint_dir)
     else:
-        print("start eva .. ",flush=True)
         
         # label1_path = find_video_files("./LaVie/res/base/invid")
         # label0_path = find_video_files("./invid/clip")[1000:2000] 
@@ -407,64 +387,54 @@ def main():
         # video_path = np.concatenate((label1_path,label0_path))
 
 
-        # label0_path = find_video_files("./Hotshot-XL/outputs/invid")
-        # label1_path = find_video_files("./i2vgen-xl/outputs/invid/i2v")
-        # label2_path = find_video_files("./i2vgen-xl/outputs/invid/t2v")
-        # label3_path = find_video_files("./LaVie/res/base/invid")
-        # label4_path = find_video_files("./SEINE/results/invid/i2v")
-        # label5_path = find_video_files("./Show-1/outputs/invid")
-        # label6_path = find_video_files("./video_prevention/outputs/Invid/svd_xt")
-        # label7_path = find_video_files("./VideoCrafter/results/invid/i2v")
-        # label8_path = find_video_files("./VideoCrafter/results/invid/t2v")
-
-        # label0_path = find_video_files("./Hotshot-XL/outputs/webvid")
-        # label1_path = find_video_files("./i2vgen-xl/outputs/webvid/i2v")
-        # label2_path = find_video_files("./i2vgen-xl/outputs/webvid/t2v")
-        # label3_path = find_video_files("./LaVie/res/base/webvid")
-        # label4_path = find_video_files("./SEINE/results/webvid/i2v")
-        # label5_path = find_video_files("./Show-1/outputs/webvid")
-        # label6_path = find_video_files("./video_prevention/outputs/webvid/svd_xt")
-        # label7_path = find_video_files("./VideoCrafter/results/webvid/i2v")
-        # label8_path = find_video_files("./VideoCrafter/results/webvid/t2v")
+        label0_path = find_video_files("./Hotshot-XL/outputs/invid")
+        label1_path = find_video_files("./i2vgen-xl/outputs/invid/i2v")
+        label2_path = find_video_files("./i2vgen-xl/outputs/invid/t2v")
+        label3_path = find_video_files("./LaVie/res/base/invid")
+        label4_path = find_video_files("./SEINE/results/invid/i2v")
+        label5_path = find_video_files("./Show-1/outputs/invid")
+        label6_path = find_video_files("./video_prevention/outputs/Invid/svd_xt")
+        label7_path = find_video_files("./VideoCrafter/results/invid/i2v")
+        label8_path = find_video_files("./VideoCrafter/results/invid/t2v")
         
-        # label0 = np.full(len(label0_path),0)
-        # label1 = np.full(len(label1_path),1)
-        # label2 = np.full(len(label2_path),2)
-        # label3 = np.full(len(label3_path),3)
-        # label4 = np.full(len(label4_path),4)
-        # label5 = np.full(len(label5_path),5)
-        # label6 = np.full(len(label6_path),6)
-        # label7 = np.full(len(label7_path),7)
-        # label8 = np.full(len(label8_path),8)
+        label0 = np.full(len(label0_path),0)
+        label1 = np.full(len(label1_path),1)
+        label2 = np.full(len(label2_path),2)
+        label3 = np.full(len(label3_path),3)
+        label4 = np.full(len(label4_path),4)
+        label5 = np.full(len(label5_path),5)
+        label6 = np.full(len(label6_path),6)
+        label7 = np.full(len(label7_path),7)
+        label8 = np.full(len(label8_path),8)
 
-        # print(len(label0))
-        # print(len(label1))
-        # print(len(label2))
-        # print(len(label3))
-        # print(len(label4))
-        # print(len(label5))
-        # print(len(label6))
-        # print(len(label7))
-        # print(len(label8))
-        # label0_path = np.array(label0_path)
-        # label1_path = np.array(label1_path)
-        # label2_path = np.array(label2_path)
-        # label3_path = np.array(label3_path)
-        # label4_path = np.array(label4_path)
-        # label5_path = np.array(label5_path)
-        # label6_path = np.array(label6_path)
-        # label7_path = np.array(label7_path)
-        # label8_path = np.array(label8_path)
+        print(len(label0))
+        print(len(label1))
+        print(len(label2))
+        print(len(label3))
+        print(len(label4))
+        print(len(label5))
+        print(len(label6))
+        print(len(label7))
+        print(len(label8))
+        label0_path = np.array(label0_path)
+        label1_path = np.array(label1_path)
+        label2_path = np.array(label2_path)
+        label3_path = np.array(label3_path)
+        label4_path = np.array(label4_path)
+        label5_path = np.array(label5_path)
+        label6_path = np.array(label6_path)
+        label7_path = np.array(label7_path)
+        label8_path = np.array(label8_path)
 
-        # labels = np.concatenate((label0,label1,label2,label3,label4,label5,label6,label7,label8))
+        labels = np.concatenate((label0,label1,label2,label3,label4,label5,label6,label7,label8))
         
-        # video_path = np.concatenate((label0_path,label1_path,label2_path,label3_path,label4_path,label5_path,label6_path,label7_path,label8_path))
+        video_path = np.concatenate((label0_path,label1_path,label2_path,label3_path,label4_path,label5_path,label6_path,label7_path,label8_path))
 
 
         print("load data...")
         processor = AutoImageProcessor.from_pretrained("MCG-NJU/videomae-base", cache_dir="/scratch/trv3px/huggingface/hub")
-        model = VideoMAEForVideoClassification.from_pretrained("MCG-NJU/videomae-base", cache_dir="/scratch/trv3px/huggingface/hub",num_labels = 9)
-        model.load_state_dict(torch.load("./VideoX/X-CLIP/webvid_MAE_ST_best_model.pth"))
+        model = VideoMAEForVideoClassification.from_pretrained("MCG-NJU/videomae-base", cache_dir="/scratch/trv3px/huggingface/hub",num_labels = args.label_number)
+        model.load_state_dict(torch.load(args.load_pre_trained_model_state))
         model = model.to("cuda:0")
         print(model)
         print("load model...")
@@ -473,26 +443,10 @@ def main():
         data['labels'] = labels
 
         df_data = pd.DataFrame(data)
-        # df_train, df_val = train_test_split(df_data,test_size = 0.2, random_state = 2024)
-        # df_train = df_train.reset_index(drop=True)
-        # df_val = df_val.reset_index(drop=True)
-        # train_data_loader = CreateDataLoader(df_train,processor,4)
         val_data_loader = CreateDataLoader(df_data,processor,4)
-
-        EPOCHS = 20
-
-        LR = 1e-5
-
-        optimizer = AdamW(model.parameters(), lr = LR)
-        total_steps = len(val_data_loader) * EPOCHS
-
-        scheduler = get_linear_schedule_with_warmup(optimizer, 
-                                                num_warmup_steps = 0, 
-                                                num_training_steps = total_steps)
-
         loss_fn = torch.nn.CrossEntropyLoss()
         val_acc, val_loss = eval_model(model, val_data_loader, loss_fn, len(df_data))
         print(f'Val Loss: {val_loss} ; Val Accuracy: {val_acc}')
 if __name__ == '__main__':
-    train=False
-    main()
+    args = parse_args()
+    main(args)
