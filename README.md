@@ -21,7 +21,7 @@ This module contains:
 
 ### Video generation models dependencies
 
-Our experiments include nine different generative tasks for each generation model environment. Please refer to their repository. - [Hotshot-xl]((https://github.com/hotshotco/Hotshot-XL))
+Our experiments include nine different generative tasks for each generation model environment. Please refer to their repository. [Hotshot-xl](https://github.com/hotshotco/Hotshot-XL)
 
 
 ### Detection and Source tracing model dependencies
