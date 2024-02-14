@@ -45,5 +45,31 @@ pip install -r requirements.txt
 ```
 
 ## Model Training
+Train detection and source tracing model based on the I3D model.
+> Note: The default setting for code scripts is nine labels if you want to change the number of labels in the experiments. Please change the code.
+```bash
+python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir your_directory
+```
+Develop a detection and source tracing model using VideoMAE as the backbone.
+```bash
+python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir your_directory
+```
+Build the detection and source tracing model using xclip.
+```bash
+python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir your_directory
+```
 
 ## Misuse Prevention
+
+We provided two defense strategies, which are *directed defense* and *undirected defense*. To execute the *directed defense* approach, run:
+
+```bash
+python misuse_prevention.py --input_path original_image --tar_img_path target_image --steps iteration_steps --eps 4/255
+```
+
+For *undirected defense*, run:
+
+```bash
+python misuse_prevention.py --input_path original_image --directed False --steps iteration_steps --eps 4/255
+```
+
