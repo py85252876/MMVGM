@@ -26,9 +26,23 @@ Our experiments include nine different generative tasks for each generation mode
 
 ### Detection and Source tracing model dependencies
 
+You can add the requirements files for the detection and source tracing models set up in this part.
+
 #### I3D dependencies
 
+Install [requirements_i3d.txt](detection_and_source_tracing/requirements_i3d.txt) and run:
+
+```bash
+pip install -r requirements_i3d.txt
+```
+
 #### X-Clip and VideoMAE dependencies
+
+Install [requirements.txt](detection_and_source_tracing/requirements.txt) and run:
+
+```bash
+pip install -r requirements.txt
+```
 
 ## Model Training
 
