@@ -21,7 +21,7 @@ This module contains:
 
 ### Video generation models dependencies
 
-Our experiments include nine different generative tasks for each generation model environment. Please refer to their repository. [Hotshot-xl](https://github.com/hotshotco/Hotshot-XL)
+Our experiments include nine different generative tasks for each generation model environment. Please refer to their repository respectively: [Hotshot-xl](https://github.com/hotshotco/Hotshot-XL) [I2Vgen-xl](https://github.com/ali-vilab/i2vgen-xl) [Show-1](https://github.com/showlab/Show-1) [Videocrafter](https://github.com/AILab-CVC/VideoCrafter) [SEINE](https://github.com/Vchitect/SEINE) [LaVie](https://github.com/Vchitect/LaVie) [Stable Video Diffusion](https://github.com/Stability-AI/generative-models) .
 
 
 ### Detection and Source tracing model dependencies
