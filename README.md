@@ -1,6 +1,6 @@
 # MMVGM 
 
-This repository contains code for fake video detection, fake video source tracing, and misuse prevention tasks. We have proposed the first pipeline against the misuse and unsafe concern for video diffusion models.
+This repository contains code for *fake video detection*, *fake video source tracing*, and *misuse prevention* tasks. We have proposed the first pipeline against the misuse and unsafe concern for video diffusion models.
 
 This module contains:
 
@@ -20,6 +20,9 @@ This module contains:
 ## Download Dependencies
 
 ### Video generation models dependencies
+
+Our experiments include nine different generative tasks for each generation model environment. Please refer to their repository. - [Hotshot-xl]((https://github.com/hotshotco/Hotshot-XL))
+
 
 ### Detection and Source tracing model dependencies
 
