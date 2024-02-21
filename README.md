@@ -3,6 +3,8 @@
 
 This repository contains code for *fake video detection*, *fake video source tracing*, and *misuse prevention* tasks. We have proposed the first pipeline against the misuse and unsafe concern for video diffusion models.
 
+<a href='https://arxiv.org/abs/2402.13126'><img src='https://img.shields.io/badge/Paper-Arxiv-red'></a>
+
 This repository contains:
 
 1. Codes for trained detection and source tracing models with given data.
@@ -21,6 +23,7 @@ This repository contains:
 - [👀 Model Evaluation](#-model-evaluation)
 - [💪 Misuse Prevention](#-misuse-prevention)
 - [🖊️ Citation](#-citation)
+- [🥰 Acknowledgement](#-acknowledgement)
 
 ## 🛠️ Download Dependencies
 
@@ -230,4 +233,8 @@ python misuse_prevention.py --input_path original_image --directed False --steps
       primaryClass={cs.CR}
 }
 ```
+
+## 🥰 Acknowledgement
+
+We feel gratitude for the previous open-source work that helped us construct our **VGMShield**. These works include but are not limited to [Video Features](https://github.com/v-iashin/video_features), [VideoX](https://github.com/microsoft/VideoX),[Hotshot-xl](https://github.com/hotshotco/Hotshot-XL), [I2Vgen-xl](https://github.com/ali-vilab/i2vgen-xl), [Show-1](https://github.com/showlab/Show-1), [Videocrafter](https://github.com/AILab-CVC/VideoCrafter), [SEINE](https://github.com/Vchitect/SEINE), [LaVie](https://github.com/Vchitect/LaVie), and [Stable Video Diffusion](https://github.com/Stability-AI/generative-models), we respect their effort and original contributions.
 
