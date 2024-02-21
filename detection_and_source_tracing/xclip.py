@@ -16,192 +16,50 @@ from tqdm import tqdm
 np.random.seed(0)
 import argparse
 
-
-
-class CreateDataset(torch.utils.data.Dataset):
-    def __init__(self,videos_file,labels,processor):
-        self.videos_file = videos_file
-        self.labels = labels
-        # print(self.labels[:7])
-        self.processor = processor
-        self.processed_video = []
-        self.processed_label = []
-        for video_file,label in zip(self.videos_file,self.labels):
-            container = av.open(video_file)
-            indices = self.sample_frame_indices(clip_len=8, frame_sample_rate=1, seg_len=container.streams.video[0].frames)
-            video = self.read_video_pyav(container, indices)
-            if video is None:
-                continue
-            processed_video = self.processor(videos=list(video), return_tensors="pt")
-            # print(processed_video['pixel_values'].shape)
-            pro_video = processed_video['pixel_values']
-            # print(pro_video.shape)
-            if pro_video.shape[1] == 8:
-                self.processed_video.append(pro_video)
-                self.processed_label.append(label)
-        print(self.processed_label.count(8))
-        print(self.processed_label.count(7))
-        print(self.processed_label.count(6))
-        print(self.processed_label.count(5))
-        print(self.processed_label.count(4))
-        print(self.processed_label.count(3))
-        print(self.processed_label.count(2))
-        print(self.processed_label.count(1))
-        print(self.processed_label.count(0))
-    def __len__(self):
-        return len(self.processed_label)
-
-    def __getitem__(self,item):
-        return {
-            'input':self.processed_video[item],
-            'label': torch.tensor(self.processed_label[item])
-        }
-
-    def read_video_pyav(self,container, indices):
-        '''
-        Decode the video with PyAV decoder.
-        Args:
-            container (`av.container.input.InputContainer`): PyAV container.
-            indices (`List[int]`): List of frame indices to decode.
-        Returns:
-            result (np.ndarray): np array of decoded frames of shape (num_frames, height, width, 3).
-        '''
-        frames = []
-        container.seek(0)
-        # start_index = indices[0]
-        start_index = indices[0]
-        end_index = indices[-1]
-        for i, frame in enumerate(container.decode(video=0)):
-            if i > end_index:
-                break
-            if i >= start_index and i in indices:
-                frames.append(frame)
-        if frames:
-            return np.stack([x.to_ndarray(format="rgb24") for x in frames])
-        else:
-            return None
-
-
-    def sample_frame_indices(self, clip_len, frame_sample_rate, seg_len):
-        '''
-        Sample the first number of frame indices from the video.
-        Args:
-            clip_len (`int`): Total number of frames to sample.
-            frame_sample_rate (`int`): Sample every n-th frame.
-            seg_len (`int`): Maximum allowed index of sample's last frame.
-        Returns:
-            indices (`List[int]`): List of sampled frame indices
-        '''
-        clip_len = min(clip_len, seg_len)
-
-        indices = list(range(0, clip_len * frame_sample_rate, frame_sample_rate))
-
-        return indices
-
-def CreateDataLoader(df,processor,batch_size):
-    ds = CreateDataset(videos_file = df['video_path'],
-                        labels = df['labels'],
-                        processor = processor)
-    return torch.utils.data.DataLoader(ds,batch_size=batch_size,num_workers = 0,drop_last=True)
-
-class BinaryClassifier(nn.Module):
-    def __init__(self, input_dim, num_classes=9):
-        super(BinaryClassifier, self).__init__()
-        
-        # Layer 1
-        self.layer1 = nn.Sequential(
-            nn.Linear(input_dim, 1024),
-            nn.BatchNorm1d(1024),
-            nn.ReLU(),
-            nn.Dropout(0.5)
-        )
-
-
-        self.layer2 = nn.Sequential(
-            nn.Linear(1024, 512),
-            # nn.BatchNorm1d(512),
-            nn.ReLU6(),
-            nn.Dropout(0.5)
-        )
-        
-        # Layer 2
-        self.layer3 = nn.Sequential(
-            nn.Linear(512, 256),
-            # nn.BatchNorm1d(256),
-            nn.ReLU6(),
-            nn.Dropout(0.5)
-        )
-        
-        # Layer 3
-        self.layer4 = nn.Sequential(
-            nn.Linear(256, 128),
-            # nn.BatchNorm1d(128),
-            nn.ReLU6(),
-            nn.Dropout(0.5)
-        )
-        
-        # Layer 4
-        self.layer5 = nn.Sequential(
-            nn.Linear(128, 64),
-            # nn.BatchNorm1d(64),
-            nn.ReLU6(),
-            nn.Dropout(0.5)
-        )
-
-        self.layer6 = nn.Sequential(
-            nn.Linear(64, 32),
-            # nn.BatchNorm1d(32),
-            nn.ReLU6(),
-            nn.Dropout(0.5)
-        )
-        
-        # Output layer
-        self.out_layer = nn.Linear(32, num_classes)
-        
-    def forward(self, x):
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
-        x = self.layer5(x)
-        x = self.layer6(x)
-        return self.out_layer(x)
-
-class VideoClassifier(torch.nn.Module):
-    def __init__(self,xclip,binary_cla):
-        super(VideoClassifier,self).__init__()
-        self.video_features_extractor = xclip
-        self.classifier = binary_cla
-        # self.mit = mit
-        # for param in self.video_features_extractor.parameters():
-        #     param.requires_grad = False
-
-    def forward(self,input_video):
-        # print(input_video.shape)
-        batch_size, num_frames, num_channels, height, width = input_video.shape
-        # input_video = input_video.reshape(-1, num_channels, height, width)
-        # print(self.mit.mit(self.mit.visual_projection(self.video_features_extractor(input_video).last_hidden_state[1]).view(4,16,-1))[1].shape)
-        # print(self.video_features_extractor(input_video).last_hidden_state[0, 0, :].shape)
-        # print(self.video_features_extractor(input_video).pooler_output.shape)
-        video_emb = self.video_features_extractor.get_video_features(pixel_values = input_video)
-        # video_emb = video_emb
-        # print(video_emb.shape)
-        classifier_output = self.classifier(video_emb)
-        return classifier_output
+import os
+current_dir = os.path.dirname(__file__)
+parent_dir = os.path.dirname(current_dir)
+a_folder_path = os.path.join(parent_dir, 'utils')
+import sys
+sys.path.append(a_folder_path)
+import mydataset
+import models
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="XCLIP")
+    parser = argparse.ArgumentParser(description="I3D")
     parser.add_argument(
         "--load_pre_trained_model_state", 
         required=False,
         type=str,
         default=None
     )
+    parser.add_argument(
+        '--real_videos_path', 
+        nargs='+', help='<Required> Set flag', 
+        required=False)
+
+    parser.add_argument(
+        '--fake_videos_path', 
+        nargs='+', help='<Required> Set flag', 
+        required=False)
+
+    parser.add_argument(
+        "--pre_trained_I3D_model", 
+        required=False,
+        type=str,
+        default=None
+    )
+
+    parser.add_argument(
+        "--task",
+        default="detection",
+        choices=["detection","source_tracing"],
+    )
 
     parser.add_argument(
         "--train", 
         required=True,
-        type=bool,
+        type=str,
         default=True
     )
 
@@ -215,14 +73,14 @@ def parse_args():
     parser.add_argument(
         "--epoch", 
         required=False,
-        type=float,
+        type=int,
         default=20
     )
 
     parser.add_argument(
         "--label_number", 
         required=False,
-        type=float,
+        type=int,
         default=9
     )
 
@@ -234,6 +92,49 @@ def parse_args():
     )
 
     return parser.parse_args()
+
+def process_files():
+    if args.task == "source_tracing":
+        data = {}
+        if args.label_number != len(args.fake_videos_path):
+            print("The label numbers is not equal with fake videos path, Please check and rerun.")
+            return 
+        for i,path in enumerate(args.fake_videos_path):
+            data[f"label{i}_path"] = np.array(find_video_files(path)) 
+            data[f"label{i}"] = np.full(len(data[f"label{i}_path"]),i)
+        data["video_path"] = np.concatenate([data[f'label{i}_path'] for i in range(args.label_number)])
+        data['labels'] = np.concatenate([data[f'label{i}'] for i in range(args.label_number)])
+        return data
+    elif args.task == "detection":
+        data = {}
+        if args.label_number != 2:
+            print("For detection task the label number should be 2.")
+        if len(args.real_videos_path) == 0 or len(args.fake_videos_path) == 0:
+            print("Please assign the path for real/fake videos.")
+            return
+        for i,path in enumerate(args.real_videos_path):
+            data[f"real_label{i}_path"] = np.array(find_video_files(path))
+            data[f"real_label{i}"] = np.full(len(data[f"real_label{i}_path"]),0)
+        data["real_video_path"] = np.concatenate([data[f'real_label{i}_path'] for i in range(len(args.real_videos_path))])
+        data['real_labels'] = np.concatenate([data[f'real_label{i}'] for i in range(len(args.real_videos_path))])
+        for i,path in enumerate(args.fake_videos_path):
+            data[f"fake_label{i}_path"] = np.array(find_video_files(path))
+            data[f"fake_label{i}"] = np.full(len(data[f"fake_label{i}_path"]),1)
+        data["fake_video_path"] = np.concatenate([data[f'fake_label{i}_path'] for i in range(len(args.fake_videos_path))])
+        data['fake_labels'] = np.concatenate([data[f'fake_label{i}'] for i in range(len(args.fake_videos_path))])
+        data['video_path'] = np.concatenate((data["real_video_path"],data["fake_video_path"]))
+        data['labels'] = np.concatenate((data['real_labels'],data['fake_labels']))
+        return data
+    else:
+        print("The task is wrong.")
+        return
+
+def CreateDataLoader(df,processor,batch_size):
+    ds = mydataset.XCLIPDataset(videos_file = df['video_path'],
+                        labels = df['labels'],
+                        processor = processor)
+    return torch.utils.data.DataLoader(ds,batch_size=batch_size,num_workers = 0,drop_last=True)
+
 
 def find_video_files(directory):
     video_files = []
@@ -253,23 +154,12 @@ def train_model(model, data_loader, loss_fn, optimizer, scheduler, n_examples):
     for d in tqdm(data_loader, desc="Training", leave=False):
         input_vids = d['input'].to("cuda:0")
         label = d['label'].to("cuda:0")
-        # input_video = input_vids['pixel_values']
         input_video = input_vids.squeeze(1)
-        # print(input_video.shape)
-        # input_video = input_video
-        # label = label.to("cuda:0")
         output = model(input_video)
-        # print(output)
-        # # logits = output.logits
         _, preds = torch.max(output, dim = 1)
-        # print(preds)
-        # print(label)
         loss = loss_fn(output, label)
-        # print(output)
         correct_predictions += torch.sum(preds == label)
         losses.append(loss.item())
-
-        
         loss.backward()
         optimizer.step()
         scheduler.step()
@@ -297,12 +187,10 @@ def eval_model(model, data_loader, loss_fn, n_examples):
         for d in data_loader:
             input_vids = d['input'].to("cuda:0")
             label = d['label'].to("cuda:0")
-            # input_video = input_vids['pixel_values']
             input_video = input_vids.squeeze(1)
             output = model(input_video)
             _, preds = torch.max(output, dim = 1)
             loss = loss_fn(output, label)
-            
             correct_predictions += torch.sum(preds == label)
             losses.append(loss.item())
             all_preds.extend(preds.cpu().numpy())
@@ -319,62 +207,20 @@ def eval_model(model, data_loader, loss_fn, n_examples):
 
 
 def main():
-    if args.train:
-        label0_path = find_video_files("./Hotshot-XL/outputs/invid")
-        label1_path = find_video_files("./i2vgen-xl/outputs/invid/i2v")
-        label2_path = find_video_files("./i2vgen-xl/outputs/invid/t2v")
-        label3_path = find_video_files("./LaVie/res/base/invid")
-        label4_path = find_video_files("./SEINE/results/invid/i2v")
-        label5_path = find_video_files("./Show-1/outputs/invid")
-        label6_path = find_video_files("./video_prevention/outputs/Invid/svd_xt")
-        label7_path = find_video_files("./VideoCrafter/results/invid/i2v")
-        label8_path = find_video_files("./VideoCrafter/results/invid/t2v")
-        
-        label0 = np.full(len(label0_path),0)
-        label1 = np.full(len(label1_path),1)
-        label2 = np.full(len(label2_path),2)
-        label3 = np.full(len(label3_path),3)
-        label4 = np.full(len(label4_path),4)
-        label5 = np.full(len(label5_path),5)
-        label6 = np.full(len(label6_path),6)
-        label7 = np.full(len(label7_path),7)
-        label8 = np.full(len(label8_path),8)
-
-        print(len(label0))
-        print(len(label1))
-        print(len(label2))
-        print(len(label3))
-        print(len(label4))
-        print(len(label5))
-        print(len(label6))
-        print(len(label7))
-        print(len(label8))
-        label0_path = np.array(label0_path)
-        label1_path = np.array(label1_path)
-        label2_path = np.array(label2_path)
-        label3_path = np.array(label3_path)
-        label4_path = np.array(label4_path)
-        label5_path = np.array(label5_path)
-        label6_path = np.array(label6_path)
-        label7_path = np.array(label7_path)
-        label8_path = np.array(label8_path)
-
-        labels = np.concatenate((label0,label1,label2,label3,label4,label5,label6,label7,label8))
-        
-        video_path = np.concatenate((label0_path,label1_path,label2_path,label3_path,label4_path,label5_path,label6_path,label7_path,label8_path))
-
-        print("load data...")
+    if args.train == "True":
+        print("load data....")
+        data = process_files()
+        new_data = {}
+        new_data['video_path'] = data['video_path']
+        new_data['labels'] = data['labels']
         processor = AutoProcessor.from_pretrained("microsoft/xclip-large-patch14")
         xclip = AutoModel.from_pretrained("microsoft/xclip-large-patch14")
-        binary_cla = BinaryClassifier(768,num_classes = args.label_number)
-        video_cls = VideoClassifier(xclip,binary_cla)
+        binary_cla = models.BinaryClassifier(768,num_classes = args.label_number)
+        video_cls = models.VideoClassifier(xclip,binary_cla)
         video_cls = video_cls.to("cuda:0")
         print("load model...")
-        data={}
-        data['video_path'] = video_path
-        data['labels'] = labels
 
-        df_data = pd.DataFrame(data)
+        df_data = pd.DataFrame(new_data)
         df_train, df_val = train_test_split(df_data,test_size = 0.2, random_state = 2024, stratify=df_data['labels'])
         df_train = df_train.reset_index(drop=True)
         df_val = df_val.reset_index(drop=True)
@@ -404,64 +250,21 @@ def main():
             val_acc, val_loss = eval_model(video_cls, val_data_loader, loss_fn, len(df_val))
             print(f'Val Loss: {val_loss} ; Val Accuracy: {val_acc}')
         torch.save(video_cls.state_dict(), args.save_checkpoint_dir)
-    else:
-        label0_path = find_video_files("./Hotshot-XL/outputs/webvid")
-        label1_path = find_video_files("./i2vgen-xl/outputs/webvid/i2v")
-        label2_path = find_video_files("./i2vgen-xl/outputs/webvid/t2v")
-        label3_path = find_video_files("./LaVie/res/base/webvid")
-        label4_path = find_video_files("./SEINE/results/webvid/i2v")
-        label5_path = find_video_files("./Show-1/outputs/webvid")
-        label6_path = find_video_files("./video_prevention/outputs/webvid/svd_xt")
-        label7_path = find_video_files("./VideoCrafter/results/webvid/i2v")
-        label8_path = find_video_files("./VideoCrafter/results/webvid/t2v")
-        
-        label0 = np.full(len(label0_path),0)
-        label1 = np.full(len(label1_path),1)
-        label2 = np.full(len(label2_path),2)
-        label3 = np.full(len(label3_path),3)
-        label4 = np.full(len(label4_path),4)
-        label5 = np.full(len(label5_path),5)
-        label6 = np.full(len(label6_path),6)
-        label7 = np.full(len(label7_path),7)
-        label8 = np.full(len(label8_path),8)
-
-        print(len(label0))
-        print(len(label1))
-        print(len(label2))
-        print(len(label3))
-        print(len(label4))
-        print(len(label5))
-        print(len(label6))
-        print(len(label7))
-        print(len(label8))
-        label0_path = np.array(label0_path)
-        label1_path = np.array(label1_path)
-        label2_path = np.array(label2_path)
-        label3_path = np.array(label3_path)
-        label4_path = np.array(label4_path)
-        label5_path = np.array(label5_path)
-        label6_path = np.array(label6_path)
-        label7_path = np.array(label7_path)
-        label8_path = np.array(label8_path)
-
-        labels = np.concatenate((label0,label1,label2,label3,label4,label5,label6,label7,label8))
-        
-        video_path = np.concatenate((label0_path,label1_path,label2_path,label3_path,label4_path,label5_path,label6_path,label7_path,label8_path))
-
-
+    elif args.train == "False":
         print("load data...")
+        data = process_files()
+        new_data = {}
+        new_data['video_path'] = data['video_path']
+        new_data['labels'] = data['labels']
         processor = AutoProcessor.from_pretrained("microsoft/xclip-large-patch14")
         xclip = AutoModel.from_pretrained("microsoft/xclip-large-patch14")
-        binary_cla = BinaryClassifier(768,num_classes = args.label_number)
-        video_cls = VideoClassifier(xclip,binary_cla)
+        binary_cla = models.BinaryClassifier(768,num_classes = args.label_number)
+        video_cls = models.VideoClassifier(xclip,binary_cla)
         video_cls.load_state_dict(torch.load(args.load_pre_trained_model_state))
         video_cls = video_cls.to("cuda:0")
         print("load model...")
-        data={}
-        data['video_path'] = video_path
-        data['labels'] = labels
 
-        df_data = pd.DataFrame(data)
+        df_data = pd.DataFrame(new_data)
         val_data_loader = CreateDataLoader(df_data,processor,4)
         loss_fn = torch.nn.CrossEntropyLoss()
         val_acc, val_loss = eval_model(video_cls, val_data_loader, loss_fn, len(val_data_loader.dataset))
@@ -469,4 +272,4 @@ def main():
 
 if __name__ == '__main__':
     args = parse_args()
-    main(args)
+    main()
