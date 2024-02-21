@@ -51,7 +51,7 @@ conda env create -f environment_mae.yml
 
 Train detection and source tracing model based on the I3D model.
 
-First, enter [detection and source tracing directory](./direction_and_source_tracing)
+First, enter [detection and source tracing directory](./detection_and_source_tracing)
 
 ```bash
 cd direction_and_source_tracing
