@@ -142,6 +142,8 @@ python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_d
 
 ## 💪 Misuse Prevention
 
+> Note: In our paper, we use the encoders from [Stable Video Diffusion](https://github.com/Stability-AI/generative-models) to add perturbation. The environment for our defense methods is the same as [Stable Video Diffusion](https://github.com/Stability-AI/generative-models).
+
 We provided two defense strategies, which are *directed defense* and *undirected defense*. To execute the *directed defense* approach, run:
 
 ```bash
