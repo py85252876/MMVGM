@@ -60,7 +60,7 @@ First, enter [detection and source tracing directory](./detection_and_source_tra
 cd direction_and_source_tracing
 ```
 
-> Note: The default setting for source tracing is the nine generation tasks we mentioned in our paper. Please change the code for your own tasks.
+> Note: The default setting for source tracing is the nine generation tasks as we mentioned in our paper. Please change the code for your own tasks.
 
 - **Training I3D-based detection model**
 
