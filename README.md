@@ -7,18 +7,19 @@ This module contains:
 1. Codes for trained detection and source tracing models with given data.
 2. Approaches to use our misuse prevention strategy.
 
-## Table of Contents
+## 📄 Table of Contents
 
-- [Download Dependencies](#download-dependencies)
+- [📄 Table of Contents](#table_of_contents)
+- [🛠️ Download Dependencies](#download-dependencies)
 	- [Video generation models dependencies](#video-generation-models-dependencies)
 	- [Detection and Source tracing model dependencies](#detection-and-source-tracing-model-dependencies)
     - [I3D dependencies](#i3d-dependencies)
     - [X-Clip and VideoMAE dependencies](#x-clip-and-videomae-dependencies)
-- [Model Training](#model-training)
+- [🚀 Model Training](#model-training)
 - [Misuse Prevention](#misuse-prevention)
-- [Citation](#citation)
+- [🖊️ Citation](#citation)
 
-## Download Dependencies
+## 🛠️ Download Dependencies
 
 ### Video generation models dependencies
 
@@ -27,7 +28,7 @@ Our experiments include nine different generative tasks for each generation mode
 
 ### Detection and Source tracing model dependencies
 
-You can add the requirements files for the detection and source tracing models set up in this part.
+You can add the requirements files for the detection and source tracing models in this part.
 
 #### I3D dependencies
 
@@ -46,7 +47,7 @@ Install [environment_mae.yml](utils/requirement/environment_mae.yml) and run:
 conda env create -f environment_mae.yml
 ```
 
-## Model Training
+## 🚀 Model Training
 
 Train detection and source tracing model based on the I3D model.
 
@@ -85,7 +86,7 @@ python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir
 ```
 
 
-Develop a detection and source tracing model using VideoMAE as the backbone.
+Develop the detection and source tracing model using VideoMAE as the backbone.
 
 - **Training MAE-based detection model**
 
@@ -153,7 +154,7 @@ For *undirected defense*, run:
 python misuse_prevention.py --input_path original_image --directed False --steps iteration_steps --eps 4/255
 ```
 
-## Citation
+## 🖊️ Citation
 
 ```BibTex
 @misc{pang2024vgmshield,
