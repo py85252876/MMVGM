@@ -58,7 +58,7 @@ cd direction_and_source_tracing
 
 > Note: The default setting for source tracing is the nine generation tasks we mentioned in our paper. Please change the code for your own tasks.
 
-### Training I3D-based detection model
+- **Training I3D-based detection model**
 
 ```bash
 python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
@@ -67,7 +67,7 @@ python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir
     --real_videos_path ./invid/clip --label_number 2
 ```
 
-### Training I3D-based source tracing model
+- **Training I3D-based source tracing model**
 
 ```bash
 python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
@@ -87,7 +87,7 @@ python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir
 
 Develop a detection and source tracing model using VideoMAE as the backbone.
 
-### Training MAE-based detection model
+- **Training MAE-based detection model**
 
 ```bash
 python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
@@ -96,7 +96,7 @@ python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir
     --real_videos_path ./invid/clip --label_number 2
 ```
 
-### Training MAE-based source tracing model
+- **Training MAE-based source tracing model**
 
 ```bash
 python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
@@ -114,7 +114,7 @@ python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir
 
 Build the detection and source tracing model using xclip.
 
-### Training XCLIP-based detection model
+- **Training XCLIP-based detection model**
 
 ```bash
 python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
@@ -123,7 +123,7 @@ python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_d
     --real_videos_path ./invid/clip --label_number 2
 ```
 
-### Training XCLIP-based source tracing model
+- **Training XCLIP-based source tracing model**
 
 ```bash
 python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
