@@ -10,16 +10,16 @@ This repository contains:
 
 ## 📄 Table of Contents
 
-- [📄 Table of Contents](#table_of_contents)
-- [🛠️ Download Dependencies](#download-dependencies)
+- [📄 Table of Contents](#-table-of-contents)
+- [🛠️ Download Dependencies](#-download-dependencies)
 	- [Video generation models dependencies](#video-generation-models-dependencies)
 	- [Detection and Source tracing model dependencies](#detection-and-source-tracing-model-dependencies)
 	    - [I3D dependencies](#i3d-dependencies)
 	    - [X-Clip and VideoMAE dependencies](#x-clip-and-videomae-dependencies)
-- [🚀 Model Training](#model-training)
-- [👀 Model Evaluation](#model-evaluation)
-- [💪 Misuse Prevention](#misuse-prevention)
-- [🖊️ Citation](#citation)
+- [🚀 Model Training](#-model-training)
+- [👀 Model Evaluation](#-model-evaluation)
+- [💪 Misuse Prevention](#-misuse-prevention)
+- [🖊️ Citation](#-citation)
 
 ## 🛠️ Download Dependencies
 
