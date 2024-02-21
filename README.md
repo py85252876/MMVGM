@@ -1,7 +1,4 @@
-<div style="display: flex; align-items: center;">
-    <img src="./utils/symbol.png" alt="symbol" style="height: 64px;"/>
-    <span style="margin-left: 10px;">VGMShield: Mitigating Misuse of Video Generative Models</span>
-</div>
+# <img src="./utils/symbol.png" alt="symbol" style="height: 32px;"/> VGMShield: Mitigating Misuse of Video Generative Models
 
 
 This repository contains code for *fake video detection*, *fake video source tracing*, and *misuse prevention* tasks. We have proposed the first pipeline against the misuse and unsafe concern for video diffusion models.
