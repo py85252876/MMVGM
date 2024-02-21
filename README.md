@@ -16,6 +16,7 @@ This module contains:
     - [X-Clip and VideoMAE dependencies](#x-clip-and-videomae-dependencies)
 - [Model Training](#model-training)
 - [Misuse Prevention](#misuse-prevention)
+- [Citation](#citation)
 
 ## Download Dependencies
 
@@ -30,33 +31,112 @@ You can add the requirements files for the detection and source tracing models s
 
 #### I3D dependencies
 
-Install [requirements_i3d.txt](detection_and_source_tracing/requirements_i3d.txt) and run:
+Install [environment_i3d.yml](utils/requirement/environment_i3d.yml) and run:
 
 ```bash
-pip install -r requirements_i3d.txt
+conda env create -f environment_i3d.yml
+
 ```
 
 #### X-Clip and VideoMAE dependencies
 
-Install [requirements.txt](detection_and_source_tracing/requirements.txt) and run:
+Install [environment_mae.yml](utils/requirement/environment_mae.yml) and run:
 
 ```bash
-pip install -r requirements.txt
+conda env create -f environment_mae.yml
 ```
 
 ## Model Training
+
 Train detection and source tracing model based on the I3D model.
-> Note: The default setting for code scripts is nine labels if you want to change the number of labels in the experiments. Please change the code.
+
+First, enter [detection and source tracing directory](direction_and_source_tracing)
+
 ```bash
-python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir your_directory
+cd direction_and_source_tracing
 ```
+
+> Note: The default setting for source tracing is the nine generation tasks we mentioned in our paper. Please change the code.
+
+### I3D-based detection model
+
+```bash
+python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+    --task "detection" \
+    --pre_trained_I3D_model ../models/rgb_imagenet.pt --fake_videos_path \
+    --real_videos_path ./invid/clip --label_number 2
+```
+
+### I3D-based source tracing model
+
+```bash
+python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+    --task "source_tracing" \
+    --pre_trained_I3D_model ../models/rgb_imagenet.pt --fake_videos_path \
+    "./Hotshot-XL/outputs/invid" \
+    "./i2vgen-xl/outputs/invid/i2v" \
+    "./i2vgen-xl/outputs/invid/t2v" \
+    "./LaVie/res/base/invid" \
+    "./SEINE/results/invid/i2v" \
+    "./Show-1/outputs/invid" \
+    "./video_prevention/outputs/Invid/svd_xt" \
+    "./VideoCrafter/results/invid/i2v" \
+    "./VideoCrafter/results/invid/t2v"
+```
+
+
 Develop a detection and source tracing model using VideoMAE as the backbone.
+
+### mae-based detection model
+
 ```bash
-python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir your_directory
+python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+    --task "detection" \
+    --fake_videos_path "./Hotshot-XL/outputs/invid" \
+    --real_videos_path ./invid/clip --label_number 2
 ```
-Build the detection and source tracing model using xclip.
+
+### mae-based source tracing model
+
 ```bash
-python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir your_directory
+python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+    --task "source_tracing" \
+    --fake_videos_path "./Hotshot-XL/outputs/invid" \
+    "./i2vgen-xl/outputs/invid/i2v" \
+    "./i2vgen-xl/outputs/invid/t2v" \
+    "./LaVie/res/base/invid" \
+    "./SEINE/results/invid/i2v" \
+    "./Show-1/outputs/invid" \
+    "./video_prevention/outputs/Invid/svd_xt" \
+    "./VideoCrafter/results/invid/i2v" \
+    "./VideoCrafter/results/invid/t2v"
+```
+
+Build the detection and source tracing model using xclip.
+
+### xclip-based detection model
+
+```bash
+python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+    --task "detection" \
+    --fake_videos_path "./Hotshot-XL/outputs/invid" \
+    --real_videos_path ./invid/clip --label_number 2
+```
+
+### xclip-based source tracing model
+
+```bash
+python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+    --task "source_tracing" \
+    --fake_videos_path "./Hotshot-XL/outputs/invid" \
+    "./i2vgen-xl/outputs/invid/i2v" \
+    "./i2vgen-xl/outputs/invid/t2v" \
+    "./LaVie/res/base/invid" \
+    "./SEINE/results/invid/i2v" \
+    "./Show-1/outputs/invid" \
+    "./video_prevention/outputs/Invid/svd_xt" \
+    "./VideoCrafter/results/invid/i2v" \
+    "./VideoCrafter/results/invid/t2v"
 ```
 
 ## Misuse Prevention
@@ -71,5 +151,18 @@ For *undirected defense*, run:
 
 ```bash
 python misuse_prevention.py --input_path original_image --directed False --steps iteration_steps --eps 4/255
+```
+
+## Citation
+
+```BibTex
+@misc{pang2024vgmshield,
+      title={VGMShield: Mitigating Misuse of Video Generative Models}, 
+      author={Yan Pang and Yang Zhang and Tianhao Wang},
+      year={2024},
+      eprint={2402.13126},
+      archivePrefix={arXiv},
+      primaryClass={cs.CR}
+}
 ```
 
