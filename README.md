@@ -2,10 +2,11 @@
 
 This repository contains code for *fake video detection*, *fake video source tracing*, and *misuse prevention* tasks. We have proposed the first pipeline against the misuse and unsafe concern for video diffusion models.
 
-This module contains:
+This repository contains:
 
 1. Codes for trained detection and source tracing models with given data.
-2. Approaches to use our misuse prevention strategy.
+2. Introduce how to evaluate detection source tracing models on given/custom data.
+3. Approaches to use our misuse prevention strategy.
 
 ## 📄 Table of Contents
 
@@ -16,6 +17,7 @@ This module contains:
 	    - [I3D dependencies](#i3d-dependencies)
 	    - [X-Clip and VideoMAE dependencies](#x-clip-and-videomae-dependencies)
 - [🚀 Model Training](#model-training)
+- [👀 Model Evaluation](#model-evaluation)
 - [💪 Misuse Prevention](#misuse-prevention)
 - [🖊️ Citation](#citation)
 
@@ -139,6 +141,9 @@ python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_d
     "./VideoCrafter/results/invid/i2v" \
     "./VideoCrafter/results/invid/t2v"
 ```
+
+## 👀 Model Evaluation
+
 
 ## 💪 Misuse Prevention
 
