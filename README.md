@@ -81,8 +81,6 @@ python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir
     --task "source_tracing" \
     --pre_trained_I3D_model ../models/rgb_imagenet.pt --fake_videos_path \
     "fake videos generated from model 1" \
-    "fake videos generated from model 2" \
-    "fake videos generated from model 3" \
     ...
     "fake videos generated from model 9" --label_number 9
 ```
@@ -106,13 +104,11 @@ python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir
     --task "source_tracing" \
     --fake_videos_path \
     "fake videos generated from model 1" \
-    "fake videos generated from model 2" \
-    "fake videos generated from model 3" \
     ...
     "fake videos generated from model 9" --label_number 9
 ```
 
-Build the detection and source tracing model using xclip.
+Build the detection and source tracing model using XCLIP.
 
 - **Training XCLIP-based detection model**
 
@@ -130,8 +126,6 @@ python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_d
     --task "source_tracing" \
     --fake_videos_path \
     "fake videos generated from model 1" \
-    "fake videos generated from model 2" \
-    "fake videos generated from model 3" \
     ...
     "fake videos generated from model 9" --label_number 9
 ```
@@ -157,8 +151,6 @@ python i3d.py --train False --task "detection" \
 python i3d.py --train False --task "source_tracing" \
     --load_pre_trained_model_state "Your pre-trained model's path" --fake_videos_path \
     "fake videos generated from model 1" \
-    "fake videos generated from model 2" \
-    "fake videos generated from model 3" \
     ...
     "fake videos generated from model 9" --label_number 9
 ```
@@ -178,8 +170,6 @@ python mae.py --train False --task "detection" \
 python mae.py --train False --task "source_tracing" \
     --load_pre_trained_model_state "Your pre-trained model's path" --fake_videos_path \
     "fake videos generated from model 1" \
-    "fake videos generated from model 2" \
-    "fake videos generated from model 3" \
     ...
     "fake videos generated from model 9" --label_number 9
 ```
@@ -199,8 +189,6 @@ python xclip.py --train False --task "detection" \
 python xclip.py --train False --task "source_tracing" \
     --load_pre_trained_model_state "Your pre-trained model's path" --fake_videos_path \
     "fake videos generated from model 1" \
-    "fake videos generated from model 2" \
-    "fake videos generated from model 3" \
     ...
     "fake videos generated from model 9" --label_number 9
 ```
