@@ -3,7 +3,7 @@
 
 This repository contains code for *fake video detection*, *fake video source tracing*, and *misuse prevention* tasks. We have proposed the first pipeline against the misuse and unsafe concern for video diffusion models.
 
-<a href='https://arxiv.org/abs/2402.13126'><img src='https://img.shields.io/badge/Paper-Arxiv-red'></a>
+<a href='https://arxiv.org/abs/2402.13126'><img src='https://img.shields.io/badge/Paper-Arxiv-red'></a> <a href='https://huggingface.co/pypy/VGMShield'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-blue'></a> 
 
 This repository contains:
 
@@ -140,7 +140,7 @@ python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_d
 
 After training the detection and source tracing model, we can test our model's performance here.
 
-> We have provided pre-trained detection and source tracing checkpoints at [checkpoints](./checkpoints) directory. Please feel free to use it.
+> We have provided pre-trained detection and source tracing checkpoints at our huggingface repository [<img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-blue'>](https://huggingface.co/pypy/VGMShield) . Please feel free to use it.
 
 - **Testing I3D-based detection model**
 
