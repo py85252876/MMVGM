@@ -16,7 +16,7 @@ This module contains:
     - [I3D dependencies](#i3d-dependencies)
     - [X-Clip and VideoMAE dependencies](#x-clip-and-videomae-dependencies)
 - [🚀 Model Training](#model-training)
-- [Misuse Prevention](#misuse-prevention)
+- [💪 Misuse Prevention](#misuse-prevention)
 - [🖊️ Citation](#citation)
 
 ## 🛠️ Download Dependencies
@@ -140,7 +140,7 @@ python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_d
     "./VideoCrafter/results/invid/t2v"
 ```
 
-## Misuse Prevention
+## 💪 Misuse Prevention
 
 We provided two defense strategies, which are *directed defense* and *undirected defense*. To execute the *directed defense* approach, run:
 
