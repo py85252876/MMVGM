@@ -31,7 +31,7 @@ Our experiments include nine different generative tasks for each generation mode
 
 ### Detection and Source tracing model dependencies
 
-You can add the requirements files for the detection and source tracing models in this part.
+In this part, you can set up the environment for detection and source tracing models.
 
 #### I3D dependencies
 
@@ -52,7 +52,7 @@ conda env create -f environment_mae.yml
 
 ## 🚀 Model Training
 
-Train detection and source tracing model based on the I3D model.
+This part provides instructions on how to train different backbone detection and source tracing models.
 
 First, enter [detection and source tracing directory](./detection_and_source_tracing)
 
@@ -65,27 +65,23 @@ cd direction_and_source_tracing
 - **Training I3D-based detection model**
 
 ```bash
-python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./save.pt \
     --task "detection" \
-    --pre_trained_I3D_model ../models/rgb_imagenet.pt --fake_videos_path \
-    --real_videos_path ./invid/clip --label_number 2
+    --pre_trained_I3D_model ../models/rgb_imagenet.pt --fake_videos_path "fake videos' path" \
+    --real_videos_path "real videos' path" --label_number 2
 ```
 
 - **Training I3D-based source tracing model**
 
 ```bash
-python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+python i3d.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./save.pt \
     --task "source_tracing" \
     --pre_trained_I3D_model ../models/rgb_imagenet.pt --fake_videos_path \
-    "./Hotshot-XL/outputs/invid" \
-    "./i2vgen-xl/outputs/invid/i2v" \
-    "./i2vgen-xl/outputs/invid/t2v" \
-    "./LaVie/res/base/invid" \
-    "./SEINE/results/invid/i2v" \
-    "./Show-1/outputs/invid" \
-    "./video_prevention/outputs/Invid/svd_xt" \
-    "./VideoCrafter/results/invid/i2v" \
-    "./VideoCrafter/results/invid/t2v"
+    "fake videos generated from model 1" \
+    "fake videos generated from model 2" \
+    "fake videos generated from model 3" \
+    ...
+    "fake videos generated from model 9" --label_number 9
 ```
 
 
@@ -94,26 +90,23 @@ Develop the detection and source tracing model using VideoMAE as the backbone.
 - **Training MAE-based detection model**
 
 ```bash
-python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./save.pt \
     --task "detection" \
-    --fake_videos_path "./Hotshot-XL/outputs/invid" \
-    --real_videos_path ./invid/clip --label_number 2
+    --fake_videos_path "fake videos' path" \
+    --real_videos_path "real videos' path" --label_number 2
 ```
 
 - **Training MAE-based source tracing model**
 
 ```bash
-python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+python mae.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./save.pt \
     --task "source_tracing" \
-    --fake_videos_path "./Hotshot-XL/outputs/invid" \
-    "./i2vgen-xl/outputs/invid/i2v" \
-    "./i2vgen-xl/outputs/invid/t2v" \
-    "./LaVie/res/base/invid" \
-    "./SEINE/results/invid/i2v" \
-    "./Show-1/outputs/invid" \
-    "./video_prevention/outputs/Invid/svd_xt" \
-    "./VideoCrafter/results/invid/i2v" \
-    "./VideoCrafter/results/invid/t2v"
+    --fake_videos_path \
+    "fake videos generated from model 1" \
+    "fake videos generated from model 2" \
+    "fake videos generated from model 3" \
+    ...
+    "fake videos generated from model 9" --label_number 9
 ```
 
 Build the detection and source tracing model using xclip.
@@ -121,30 +114,93 @@ Build the detection and source tracing model using xclip.
 - **Training XCLIP-based detection model**
 
 ```bash
-python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./save.pt \
     --task "detection" \
-    --fake_videos_path "./Hotshot-XL/outputs/invid" \
-    --real_videos_path ./invid/clip --label_number 2
+    --fake_videos_path "fake videos' path" \
+    --real_videos_path "real videos' path" --label_number 2
 ```
 
 - **Training XCLIP-based source tracing model**
 
 ```bash
-python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./test.pt \
+python xclip.py --train True --epoch 20 --learning_rate 1e-5 --save_checkpoint_dir ./save.pt \
     --task "source_tracing" \
-    --fake_videos_path "./Hotshot-XL/outputs/invid" \
-    "./i2vgen-xl/outputs/invid/i2v" \
-    "./i2vgen-xl/outputs/invid/t2v" \
-    "./LaVie/res/base/invid" \
-    "./SEINE/results/invid/i2v" \
-    "./Show-1/outputs/invid" \
-    "./video_prevention/outputs/Invid/svd_xt" \
-    "./VideoCrafter/results/invid/i2v" \
-    "./VideoCrafter/results/invid/t2v"
+    --fake_videos_path \
+    "fake videos generated from model 1" \
+    "fake videos generated from model 2" \
+    "fake videos generated from model 3" \
+    ...
+    "fake videos generated from model 9" --label_number 9
 ```
 
 ## 👀 Model Evaluation
 
+After training the detection and source tracing model, we can test our model's performance here.
+
+> We have provided pre-trained detection and source tracing checkpoints at [checkpoints](./checkpoints) directory. Please feel free to use it.
+
+- **Testing I3D-based detection model**
+
+```bash
+python i3d.py --train False --task "detection" \
+    --load_pre_trained_model_state "Your pre-trained model's path" --fake_videos_path \
+    "fake video path" \
+    --real_videos_path "real video path" --label_number 2
+```
+
+- **Testing I3D-based source tracing model**
+
+```bash
+python i3d.py --train False --task "source_tracing" \
+    --load_pre_trained_model_state "Your pre-trained model's path" --fake_videos_path \
+    "fake videos generated from model 1" \
+    "fake videos generated from model 2" \
+    "fake videos generated from model 3" \
+    ...
+    "fake videos generated from model 9" --label_number 9
+```
+
+- **Testing MAE-based detection model**
+
+```bash
+python mae.py --train False --task "detection" \
+    --load_pre_trained_model_state "Your pre-trained model's path" --fake_videos_path \
+    "fake video path" \
+    --real_videos_path "real video path" --label_number 2
+```
+  
+- **Testing MAE-based source tracing model**
+
+```bash
+python mae.py --train False --task "source_tracing" \
+    --load_pre_trained_model_state "Your pre-trained model's path" --fake_videos_path \
+    "fake videos generated from model 1" \
+    "fake videos generated from model 2" \
+    "fake videos generated from model 3" \
+    ...
+    "fake videos generated from model 9" --label_number 9
+```
+
+- **Testing XCLIP-based detection model**
+
+```bash
+python xclip.py --train False --task "detection" \
+    --load_pre_trained_model_state "Your pre-trained model's path" --fake_videos_path \
+    "fake video path" \
+    --real_videos_path "real video path" --label_number 2
+```
+  
+- **Testing XCLIP-based source tracing model**
+
+```bash
+python xclip.py --train False --task "source_tracing" \
+    --load_pre_trained_model_state "Your pre-trained model's path" --fake_videos_path \
+    "fake videos generated from model 1" \
+    "fake videos generated from model 2" \
+    "fake videos generated from model 3" \
+    ...
+    "fake videos generated from model 9" --label_number 9
+```
 
 ## 💪 Misuse Prevention
 
