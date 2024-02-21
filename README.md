@@ -15,7 +15,7 @@ This repository contains:
 	- [Video generation models dependencies](#video-generation-models-dependencies)
 	- [Detection and Source tracing model dependencies](#detection-and-source-tracing-model-dependencies)
 	    - [I3D dependencies](#i3d-dependencies)
-	    - [X-Clip and VideoMAE dependencies](#x-clip-and-videomae-dependencies)
+	    - [X-CLIP and VideoMAE dependencies](#x-clip-and-videomae-dependencies)
 - [🚀 Model Training](#-model-training)
 - [👀 Model Evaluation](#-model-evaluation)
 - [💪 Misuse Prevention](#-misuse-prevention)
@@ -41,7 +41,7 @@ conda env create -f environment_i3d.yml
 
 ```
 
-#### X-Clip and VideoMAE dependencies
+#### X-CLIP and VideoMAE dependencies
 
 Install [environment_mae.yml](utils/requirement/environment_mae.yml) and run:
 
