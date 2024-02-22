@@ -237,8 +237,8 @@ def main():
         new_data = {}
         new_data['video_path'] = data['video_path']
         new_data['labels'] = data['labels']
-        processor = AutoImageProcessor.from_pretrained("MCG-NJU/videomae-base", cache_dir="/scratch/trv3px/huggingface/hub")
-        model = VideoMAEForVideoClassification.from_pretrained("MCG-NJU/videomae-base", cache_dir="/scratch/trv3px/huggingface/hub",num_labels = args.label_number)
+        processor = AutoImageProcessor.from_pretrained("MCG-NJU/videomae-base", cache_dir="../huggingface/hub")
+        model = VideoMAEForVideoClassification.from_pretrained("MCG-NJU/videomae-base", cache_dir="../huggingface/hub",num_labels = args.label_number)
         model.load_state_dict(torch.load(args.load_pre_trained_model_state))
         model = model.to("cuda:0")
         print("load model...")
