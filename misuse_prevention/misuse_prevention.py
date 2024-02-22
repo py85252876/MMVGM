@@ -67,7 +67,7 @@ def get_batch(keys, value_dict, N, T, device):
 def get_loss(img_features, tar_features,img_v_features,tar_v_features, img, ori,lpips):
     alpha_1 = 1
     alpha_2 = 1
-    alpha_3 = 0
+    alpha_3 = 1
     img_features = img_features.view(-1)
     tar_features = tar_features.view(-1)
     tar_v_features = tar_v_features.view(-1)
@@ -93,7 +93,7 @@ def get_loss_untarget(img_features, tar_features,img_v_features,tar_v_features, 
 
 
 def misuse_prevention(
-    input_path: str = "./test.png",  # Can either be image file or folder with image files
+    input_path: str = "./test.png",  
     tar_img_path: str = "./target.png",
     eps:float = 4/255,
     steps:int = 1000,
@@ -102,40 +102,14 @@ def misuse_prevention(
     num_frames: Optional[int] = None,
     num_steps: Optional[int] = None,
     version: str = "svd",
-    fps_id: int = 6,
-    motion_bucket_id: int = 127,
-    cond_aug: float = 0.02,
     seed: int = 23,
-    decoding_t: int = 14,  # Number of frames decoded at a time! This eats most VRAM. Reduce if necessary.
     device: str = "cuda:2",
     output_folder: Optional[str] = None,
     ):
-    if version == "svd":
-        num_frames = default(num_frames, 14)
-        num_steps = default(num_steps, 25)
-        output_folder = default(output_folder, "outputs/simple_video_sample/svd/")
-        model_config = "scripts/sampling/configs/svd.yaml"
-    elif version == "svd_xt":
-        num_frames = default(num_frames, 25)
-        num_steps = default(num_steps, 30)
-        output_folder = default(output_folder, "outputs/simple_video_sample/svd_xt/")
-        model_config = "scripts/sampling/configs/svd_xt.yaml"
-    elif version == "svd_image_decoder":
-        num_frames = default(num_frames, 14)
-        num_steps = default(num_steps, 25)
-        output_folder = default(
-            output_folder, "outputs/simple_video_sample/svd_image_decoder/"
-        )
-        model_config = "scripts/sampling/configs/svd_image_decoder.yaml"
-    elif version == "svd_xt_image_decoder":
-        num_frames = default(num_frames, 25)
-        num_steps = default(num_steps, 30)
-        output_folder = default(
-            output_folder, "outputs/simple_video_sample/svd_xt_image_decoder/"
-        )
-        model_config = "scripts/sampling/configs/svd_xt_image_decoder.yaml"
-    else:
-        raise ValueError(f"Version {version} does not exist.")
+    num_frames = default(num_frames, 14)
+    num_steps = default(num_steps, 25)
+    output_folder = default(output_folder, "outputs/simple_video_sample/svd/")
+    model_config = "scripts/sampling/configs/svd.yaml"
 
     model, filter = load_model(
         model_config,
@@ -147,39 +121,20 @@ def misuse_prevention(
     
     # return
     path = Path(input_path)
-    all_img_paths = []
-    if path.is_file():
-        if any([input_path.endswith(x) for x in ["jpg", "jpeg", "png"]]):
-            all_img_paths = [input_path]
-        else:
-            raise ValueError("Path is not valid image file.")
-    elif path.is_dir():
-        all_img_paths = sorted(
-            [
-                f
-                for f in path.iterdir()
-                if f.is_file() and f.suffix.lower() in [".jpg", ".jpeg", ".png"]
-            ]
-        )
-        if len(all_img_paths) == 0:
-            raise ValueError("Folder does not contain any images.")
-    else:
-        raise ValueError
-    for input_img_path in all_img_paths:
-        with Image.open(input_img_path) as image:
-            if image.mode == "RGBA":
-                image = image.convert("RGB")
-            w, h = image.size
+    with Image.open(path) as image:
+        if image.mode == "RGBA":
+            image = image.convert("RGB")
+        w, h = image.size
 
-            if h % 64 != 0 or w % 64 != 0:
-                width, height = map(lambda x: x - x % 64, (w, h))
-                image = image.resize((width, height))
-                print(
-                    f"WARNING: Your image is of size {h}x{w} which is not divisible by 64. We are resizing to {height}x{width}!"
-                )
+        if h % 64 != 0 or w % 64 != 0:
+            width, height = map(lambda x: x - x % 64, (w, h))
+            image = image.resize((width, height))
+            print(
+                f"WARNING: Your image is of size {h}x{w} which is not divisible by 64. We are resizing to {height}x{width}!"
+            )
 
-            image = ToTensor()(image)
-            image = image * 2.0 - 1.0
+        image = ToTensor()(image)
+        image = image * 2.0 - 1.0
 
     image = image.unsqueeze(0).to(device)
     tar_img = Image.open(tar_img_path).convert("RGB")
@@ -188,7 +143,6 @@ def misuse_prevention(
     tar_img = tar_img.unsqueeze(0).to(device)
     tar_img_v = tar_img + 0.02 * torch.randn_like(tar_img)
     image_v = image + 0.02 * torch.randn_like(image)
-    # print(model.conditioner.embedders)
     H, W = image.shape[2:]
     assert image.shape[1] == 3
     F = 8
@@ -253,7 +207,7 @@ def load_model(
     num_steps: int,
 ):
     config = OmegaConf.load(config)
-    if device == "cuda:2":
+    if device == "cuda:0":
         config.model.params.conditioner_config.params.emb_models[
             0
         ].params.open_clip_embedding_config.params.init_device = device
@@ -262,7 +216,7 @@ def load_model(
     config.model.params.sampler_config.params.guider_config.params.num_frames = (
         num_frames
     )
-    if device == "cuda:2":
+    if device == "cuda:0":
         with torch.device(device):
             model = instantiate_from_config(config.model).to(device).eval()
     else:
