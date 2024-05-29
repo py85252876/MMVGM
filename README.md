@@ -211,18 +211,6 @@ For *undirected defense*, run:
 python misuse_prevention.py --input_path original_image --directed False --steps iteration_steps --eps 4/255
 ```
 
-## 🖊️ Citation
-
-```BibTex
-@misc{pang2024vgmshield,
-      title={VGMShield: Mitigating Misuse of Video Generative Models}, 
-      author={Yan Pang and Yang Zhang and Tianhao Wang},
-      year={2024},
-      eprint={2402.13126},
-      archivePrefix={arXiv},
-      primaryClass={cs.CR}
-}
-```
 
 ## 🥰 Acknowledgement
 
