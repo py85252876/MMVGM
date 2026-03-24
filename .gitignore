@@ -1,0 +1,19 @@
+.DS_Store
+.python-version
+.venv/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.py[cod]
+
+# Keep large weights and checkpoints out of git.
+*.ckpt
+*.pth
+*.pt
+*.safetensors
+
+# Generated media and local outputs.
+outputs/
+*.mp4
+*.mov
+*.avi

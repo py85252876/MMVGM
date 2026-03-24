@@ -1,40 +1,31 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.autograd import Variable
-import av
-from sklearn.metrics import classification_report
-import numpy as np
-import pandas as pd
+from __future__ import annotations
+
+import argparse
 import os
 import sys
 import warnings
-warnings.filterwarnings("ignore", category=UserWarning, module="transformers.feature_extraction_utils")
-from collections import OrderedDict
-from sklearn.model_selection import train_test_split
-from transformers import AutoProcessor, AutoModel, get_linear_schedule_with_warmup
-import os
-from tqdm import tqdm
-import sys
-import argparse
+from pathlib import Path
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.optim import AdamW
-from torch.optim import lr_scheduler
-from torch.autograd import Variable
-
-import torchvision
-from torchvision import datasets, transforms
 import numpy as np
-import os
-current_dir = os.path.dirname(__file__)
-parent_dir = os.path.dirname(current_dir)
-a_folder_path = os.path.join(parent_dir, 'utils')
-sys.path.append(a_folder_path)
-import models
-import mydataset
+import pandas as pd
+import torch
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
+from torch.optim import AdamW
+from tqdm import tqdm
+from transformers import AutoProcessor, get_linear_schedule_with_warmup
+
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    module="transformers.feature_extraction_utils",
+)
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.append(str(REPO_ROOT))
+
+from utils import models, mydataset
 
 
 def parse_args():
@@ -102,51 +93,74 @@ def parse_args():
         type=str,
         default="./checkpoints.pt"
     )
+    parser.add_argument(
+        "--batch_size",
+        required=False,
+        type=int,
+        default=4,
+    )
+    parser.add_argument(
+        "--device",
+        required=False,
+        type=str,
+        default="cuda:0" if torch.cuda.is_available() else "cpu",
+    )
+    parser.add_argument(
+        "--hf_cache_dir",
+        required=False,
+        type=str,
+        default=None,
+    )
 
     return parser.parse_args()
 
-def VideoDataLoader(df,processor,batch_size):
-    ds = mydataset.I3Ddataset(videos_file = df['video_path'],
-                        labels = df['labels'],
-                        processor = processor)
-    print("use dataloader",flush=True)
-    return torch.utils.data.DataLoader(ds,batch_size=batch_size,num_workers = 0,drop_last=True)
+def create_dataloader(df, processor, batch_size):
+    dataset = mydataset.I3Ddataset(
+        videos_file=df["video_path"],
+        labels=df["labels"],
+        processor=processor,
+    )
+    print("use dataloader", flush=True)
+    return torch.utils.data.DataLoader(
+        dataset,
+        batch_size=batch_size,
+        num_workers=0,
+        drop_last=False,
+    )
 
-def process_files():
+def build_dataframe(args):
+    video_paths = []
+    labels = []
+
     if args.task == "source_tracing":
-        data = {}
+        if not args.fake_videos_path:
+            raise ValueError("Please assign at least one fake videos path.")
         if args.label_number != len(args.fake_videos_path):
-            print("The label numbers is not equal with fake videos path, Please check and rerun.")
-            return 
-        for i,path in enumerate(args.fake_videos_path):
-            data[f"label{i}_path"] = np.array(find_video_files(path)) #need to change
-            data[f"label{i}"] = np.full(len(data[f"label{i}_path"]),i)
-        data["video_path"] = np.concatenate([data[f'label{i}_path'] for i in range(args.label_number)])
-        data['labels'] = np.concatenate([data[f'label{i}'] for i in range(args.label_number)])
-        return data
+            raise ValueError("label_number must match the number of fake video paths.")
+        for label, path in enumerate(args.fake_videos_path):
+            files = find_video_files(path)
+            video_paths.extend(files)
+            labels.extend([label] * len(files))
     elif args.task == "detection":
-        data = {}
         if args.label_number != 2:
-            print("For detection task the label number should be 2.")
-        if len(args.real_videos_path) == 0 or len(args.fake_videos_path) == 0:
-            print("Please assign the path for real/fake videos.")
-            return
-        for i,path in enumerate(args.real_videos_path):
-            data[f"real_label{i}_path"] = np.array(find_video_files(path))
-            data[f"real_label{i}"] = np.full(len(data[f"real_label{i}_path"]),0)
-        data["real_video_path"] = np.concatenate([data[f'real_label{i}_path'] for i in range(len(args.real_videos_path))])
-        data['real_labels'] = np.concatenate([data[f'real_label{i}'] for i in range(len(args.real_videos_path))])
-        for i,path in enumerate(args.fake_videos_path):
-            data[f"fake_label{i}_path"] = np.array(find_video_files(path))
-            data[f"fake_label{i}"] = np.full(len(data[f"fake_label{i}_path"]),1)
-        data["fake_video_path"] = np.concatenate([data[f'fake_label{i}_path'] for i in range(len(args.fake_videos_path))])
-        data['fake_labels'] = np.concatenate([data[f'fake_label{i}'] for i in range(len(args.fake_videos_path))])
-        data['video_path'] = np.concatenate((data["real_video_path"],data["fake_video_path"]))
-        data['labels'] = np.concatenate((data['real_labels'],data['fake_labels']))
-        return data
+            raise ValueError("For the detection task, label_number must be 2.")
+        if not args.real_videos_path or not args.fake_videos_path:
+            raise ValueError("Please assign both real_videos_path and fake_videos_path.")
+        for path in args.real_videos_path:
+            files = find_video_files(path)
+            video_paths.extend(files)
+            labels.extend([0] * len(files))
+        for path in args.fake_videos_path:
+            files = find_video_files(path)
+            video_paths.extend(files)
+            labels.extend([1] * len(files))
     else:
-        print("The task is wrong.")
-        return
+        raise ValueError(f"Unsupported task: {args.task}")
+
+    if not video_paths:
+        raise ValueError("No .mp4 files were found under the provided paths.")
+
+    return pd.DataFrame({"video_path": video_paths, "labels": labels})
 
 def find_video_files(directory):
     video_files = []
@@ -157,16 +171,18 @@ def find_video_files(directory):
                 video_files.append(full_path)
     return video_files
 
-def train_model(model, data_loader, loss_fn, optimizer, scheduler, n_examples):
+def train_model(model, data_loader, loss_fn, optimizer, scheduler, n_examples, device):
     model = model.train()
     losses = []
     correct_predictions = 0
     for d in tqdm(data_loader, desc="Training", leave=False):
-        input_vids = d['input'].squeeze(1).permute(0,2,1,3,4).to("cuda:0")
-        label = d['label'].to("cuda:0")
-        output = model(input_vids).squeeze()
-        _, preds = torch.max(output, dim = 1)
-        loss = loss_fn(output, label)
+        input_vids = d["input"].squeeze(1).permute(0, 2, 1, 3, 4).to(device)
+        label = d["label"].to(device)
+        logits = model(input_vids)
+        if logits.ndim == 3:
+            logits = logits.mean(dim=-1)
+        preds = logits.argmax(dim=1)
+        loss = loss_fn(logits, label)
         
         correct_predictions += torch.sum(preds == label)
         losses.append(loss.item())
@@ -178,7 +194,7 @@ def train_model(model, data_loader, loss_fn, optimizer, scheduler, n_examples):
         
     return correct_predictions.double() / n_examples, np.mean(losses)
 
-def eval_model(model, data_loader, loss_fn, n_examples):
+def eval_model(model, data_loader, loss_fn, n_examples, device):
     model = model.eval()
     losses = []
     correct_predictions = 0
@@ -188,11 +204,13 @@ def eval_model(model, data_loader, loss_fn, n_examples):
         all_labels = []
         for d in data_loader:
             
-            input_vids = d['input'].squeeze(1).permute(0,2,1,3,4).to("cuda:0")
-            label = d['label'].to("cuda:0")
-            output = model(input_vids).squeeze()
-            _, preds = torch.max(output, dim = 1)
-            loss = loss_fn(output, label)
+            input_vids = d["input"].squeeze(1).permute(0, 2, 1, 3, 4).to(device)
+            label = d["label"].to(device)
+            logits = model(input_vids)
+            if logits.ndim == 3:
+                logits = logits.mean(dim=-1)
+            preds = logits.argmax(dim=1)
+            loss = loss_fn(logits, label)
             
             correct_predictions += torch.sum(preds == label)
             losses.append(loss.item())
@@ -204,77 +222,102 @@ def eval_model(model, data_loader, loss_fn, n_examples):
         all_preds = np.array(all_preds)
         all_labels = np.array(all_labels)
 
-        print(classification_report(all_labels, all_preds))    
-        return correct_predictions.double() / len(data_loader.dataset), np.mean(losses)
+        print(classification_report(all_labels, all_preds))
+        return correct_predictions.double() / n_examples, np.mean(losses)
 
-def main():
+def hf_kwargs(args):
+    if args.hf_cache_dir:
+        return {"cache_dir": args.hf_cache_dir}
+    return {}
+
+def main(args):
+    device = torch.device(args.device)
     # setup dataset
     if args.train == "True":
         print("load data....")
-        data = process_files()
-        new_data = {}
-        new_data['video_path'] = data['video_path']
-        new_data['labels'] = data['labels']
-        
-        processor = AutoProcessor.from_pretrained("microsoft/xclip-large-patch14")
-        df_data = pd.DataFrame(new_data)
-        df_train, df_val = train_test_split(df_data,test_size = 0.2, random_state = 2024, stratify=df_data['labels'])
+        df_data = build_dataframe(args)
+        processor = AutoProcessor.from_pretrained(
+            "microsoft/xclip-large-patch14",
+            **hf_kwargs(args),
+        )
+        df_train, df_val = train_test_split(
+            df_data,
+            test_size=0.2,
+            random_state=2024,
+            stratify=df_data["labels"],
+        )
         df_train = df_train.reset_index(drop=True)
         df_val = df_val.reset_index(drop=True)
-        train_data_loader = VideoDataLoader(df_train,processor,4)
-        val_data_loader = VideoDataLoader(df_val,processor,4)
-        print("load model....",flush=True)
+        train_data_loader = create_dataloader(df_train, processor, args.batch_size)
+        val_data_loader = create_dataloader(df_val, processor, args.batch_size)
+        print("load model....", flush=True)
         EPOCHS = args.epoch
 
         LR = args.learning_rate
         i3d = models.InceptionI3d(400, in_channels=3)
-        i3d.load_state_dict(torch.load(args.pre_trained_I3D_model))
+        if not args.pre_trained_I3D_model:
+            raise ValueError("Please provide --pre_trained_I3D_model for I3D training.")
+        i3d.load_state_dict(torch.load(args.pre_trained_I3D_model, map_location="cpu"))
         i3d.replace_logits(args.label_number)
-        i3d = i3d.to("cuda:0")
-        print("start training...",flush=True)
-        optimizer = AdamW(i3d.parameters(), lr = LR)
+        i3d = i3d.to(device)
+        print("start training...", flush=True)
+        optimizer = AdamW(i3d.parameters(), lr=LR)
         total_steps = len(train_data_loader) * EPOCHS
 
-        scheduler = get_linear_schedule_with_warmup(optimizer, 
-                                                num_warmup_steps = 0, 
-                                                num_training_steps = total_steps)
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps=0,
+            num_training_steps=total_steps,
+        )
         loss_fn = torch.nn.CrossEntropyLoss()
 
         for epoch in tqdm(range(EPOCHS), desc="Epochs"):
-            print(f'Epoch {epoch + 1}/{EPOCHS}',flush=True)
-            print('-' * 10,flush=True)
+            print(f"Epoch {epoch + 1}/{EPOCHS}", flush=True)
+            print("-" * 10, flush=True)
             
-            train_acc, train_loss = train_model(i3d, train_data_loader, loss_fn, optimizer, scheduler, len(df_train))
-            print(f'Train Loss: {train_loss} ; Train Accuracy: {train_acc}',flush=True)
+            train_acc, train_loss = train_model(
+                i3d,
+                train_data_loader,
+                loss_fn,
+                optimizer,
+                scheduler,
+                len(train_data_loader.dataset),
+                device,
+            )
+            print(f"Train Loss: {train_loss} ; Train Accuracy: {train_acc}", flush=True)
             
-            val_acc, val_loss = eval_model(i3d, val_data_loader, loss_fn, len(df_val))
-            print(f'Val Loss: {val_loss} ; Val Accuracy: {val_acc}',flush=True)
+            val_acc, val_loss = eval_model(
+                i3d,
+                val_data_loader,
+                loss_fn,
+                len(val_data_loader.dataset),
+                device,
+            )
+            print(f"Val Loss: {val_loss} ; Val Accuracy: {val_acc}", flush=True)
+        Path(args.save_checkpoint_dir).parent.mkdir(parents=True, exist_ok=True)
         torch.save(i3d.state_dict(), args.save_checkpoint_dir)
     else:
-        if args.load_pre_trained_model_state == "":
-            print("Please define the pre-train model.")
-            return 
-        data = process_files()
-        new_data = {}
-        new_data['video_path'] = data['video_path']
-        new_data['labels'] = data['labels']
-        processor = AutoProcessor.from_pretrained("microsoft/xclip-large-patch14")
-        df_data = pd.DataFrame(new_data)
-        val_data_loader = VideoDataLoader(df_data,processor,4)
-        print("load model....",flush=True)
+        if not args.load_pre_trained_model_state:
+            raise ValueError("Please define --load_pre_trained_model_state.")
+        df_data = build_dataframe(args)
+        processor = AutoProcessor.from_pretrained(
+            "microsoft/xclip-large-patch14",
+            **hf_kwargs(args),
+        )
+        val_data_loader = create_dataloader(df_data, processor, args.batch_size)
+        print("load model....", flush=True)
         i3d = models.InceptionI3d(400, in_channels=3)
         i3d.replace_logits(args.label_number)
-        print(args.load_pre_trained_model_state,flush=True)
-        i3d.load_state_dict(torch.load(args.load_pre_trained_model_state))
-        i3d = i3d.to("cuda:0")
-        print("start training...",flush=True)
+        print(args.load_pre_trained_model_state, flush=True)
+        i3d.load_state_dict(torch.load(args.load_pre_trained_model_state, map_location="cpu"))
+        i3d = i3d.to(device)
+        print("start evaluation...", flush=True)
         loss_fn = torch.nn.CrossEntropyLoss()
-        val_acc, val_loss = eval_model(i3d, val_data_loader, loss_fn, len(val_data_loader.dataset))
-        print(f'Val Loss: {val_loss} ; Val Accuracy: {val_acc}',flush=True)
+        val_acc, val_loss = eval_model(i3d, val_data_loader, loss_fn, len(val_data_loader.dataset), device)
+        print(f"Val Loss: {val_loss} ; Val Accuracy: {val_acc}", flush=True)
 
-
+def cli():
+    main(parse_args())
 
 if __name__ == '__main__':
-    # need to add argparse
-    args = parse_args()
-    main()
+    cli()
