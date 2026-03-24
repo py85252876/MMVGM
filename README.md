@@ -99,6 +99,22 @@ python scripts/open_model_shortlist.py \
 That command creates one empty directory per model plus `manifest.json`,
 `label_map.json`, and ready-to-edit `train_*.sh` / `eval_*.sh` helpers.
 
+If you also want a server-side playbook for staging upstream generator repos and
+smoke-test commands, use:
+
+```bash
+python scripts/open_model_server_setup.py \
+    --plan-root server/open-models \
+    --code-root /u/nkp2mr/open-video-models \
+    --weights-root /bigtemp/nkp2mr/shared-benchmarks/open-video-model-weights \
+    --output-root /bigtemp/nkp2mr/shared-benchmarks/open-video-model-samples \
+    --hf-home /bigtemp/nkp2mr/huggingface-shared \
+    --dataset-root /bigtemp/nkp2mr/shared-benchmarks/mmvgm-open-video-models
+```
+
+Add `--clone-repos` if you want it to perform code-only clones for the upstream
+repos under `--code-root`.
+
 
 ### Detection and Source tracing model dependencies
 
