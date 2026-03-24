@@ -185,7 +185,7 @@
       "CPU offload is only supported in single-GPU mode.",
       "On DPLab's current 570.124.06 driver, the default uv resolution pulled torch 2.11.0+cu130 and failed CUDA initialization; force the cu128 torch/torchvision pair above before smoke testing.",
       "The CLI also loads google/t5-v1_1-xxl through Hugging Face cache. Treat that text encoder as a separate heavyweight dependency and pre-populate it intentionally instead of letting the sample script fetch it implicitly.",
-      "Preserve HF auth for smoke tests by exporting HF_TOKEN_PATH if your cache was populated from a private or rate-limited session."
+      "If your environment already defines HF_TOKEN_PATH, the smoke helpers will preserve it. They no longer guess a token-file location on your behalf."
     ],
     "download_steps": [
       "cd \"$CODE_ROOT/mochi\"",

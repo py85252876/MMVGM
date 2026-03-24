@@ -93,9 +93,11 @@ def shell_header(args: argparse.Namespace) -> List[str]:
         f'WEIGHTS_ROOT="${{WEIGHTS_ROOT:-{args.weights_root}}}"',
         f'OUTPUT_ROOT="${{OUTPUT_ROOT:-{args.output_root}}}"',
         f'HF_HOME="${{HF_HOME:-{args.hf_home}}}"',
-        'HF_TOKEN_PATH="${HF_TOKEN_PATH:-$HOME/.cache/huggingface/token}"',
         f'DATASET_ROOT="${{DATASET_ROOT:-{args.dataset_root}}}"',
-        "export HF_HOME HF_TOKEN_PATH",
+        "export HF_HOME",
+        'if [ -n "${HF_TOKEN_PATH:-}" ]; then',
+        "  export HF_TOKEN_PATH",
+        "fi",
         'mkdir -p "$PLAN_ROOT" "$CODE_ROOT" "$WEIGHTS_ROOT" "$OUTPUT_ROOT"',
         "",
     ]

@@ -119,10 +119,10 @@ The generated smoke-test helpers are intentionally conservative:
 
 - `sample_runs/mochi_cli.sh` now pins Mochi to single-GPU mode and refuses to
   auto-download `google/t5-v1_1-xxl`; populate that Hugging Face cache
-  explicitly first. It also inherits `HF_TOKEN_PATH` so the helper does not
-  silently fall back to anonymous Hub requests, and defaults to offline Hub
-  mode so an incomplete cache fails fast instead of silently resuming a huge
-  download.
+  explicitly first. If your shell already defines `HF_TOKEN_PATH`, the helper
+  preserves it; otherwise it does not guess a token-file location. It also
+  defaults to offline Hub mode so an incomplete cache fails fast instead of
+  silently resuming a huge download.
 - `sample_runs/hunyuan_i2v_step_distilled.sh` now checks for the extra text and
   vision encoders listed in `checkpoints-download.md` before launching, and it
   defaults to shorter smoke-test settings (`VIDEO_LENGTH=49`,
