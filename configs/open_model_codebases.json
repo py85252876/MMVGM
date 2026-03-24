@@ -63,16 +63,24 @@
       "hunyuanvideo-1.5-480p-t2v"
     ],
     "install_steps": [
-      "pip install -r requirements.txt",
-      "pip install -i https://mirrors.tencent.com/pypi/simple/ --upgrade tencentcloud-sdk-python"
+      "uv venv --python /usr/bin/python3.10 .venv310",
+      "source .venv310/bin/activate",
+      "uv pip install --python .venv310/bin/python -r requirements.txt torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu126 --extra-index-url https://pypi.org/simple",
+      "uv pip install --python .venv310/bin/python -i https://mirrors.tencent.com/pypi/simple/ --upgrade tencentcloud-sdk-python"
     ],
     "notes": [
       "Official source-code inference supports both T2V and I2V through generate.py.",
       "Use --rewrite false if you do not have a vLLM-compatible prompt rewrite service.",
-      "For the 480p step-distilled I2V checkpoint, the upstream README recommends 8 or 12 steps."
+      "For the 480p step-distilled I2V checkpoint, the upstream README recommends 8 or 12 steps.",
+      "The upstream checkpoints-download guide also requires Qwen2.5-VL-7B-Instruct, google/byt5-small, Glyph-SDXL-v2, and a gated SigLIP encoder from FLUX.1-Redux-dev.",
+      "On DPLab's current 570.124.06 driver, the torch/torchvision/torchaudio 2.6.0 trio resolves cleanly via the cu126 index."
     ],
     "download_steps": [
-      "huggingface-cli download tencent/HunyuanVideo-1.5 --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5\""
+      "huggingface-cli download tencent/HunyuanVideo-1.5 --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5\"",
+      "huggingface-cli download Qwen/Qwen2.5-VL-7B-Instruct --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\"",
+      "huggingface-cli download google/byt5-small --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/byt5-small\"",
+      "echo \"Download Glyph-SDXL-v2 from ModelScope into $WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/Glyph-SDXL-v2 before running the Hunyuan smoke test.\"",
+      "echo \"Request FLUX.1-Redux-dev access, then download the SigLIP encoder into $WEIGHTS_ROOT/hunyuanvideo-1.5/vision_encoder/siglip before running the Hunyuan smoke test.\""
     ],
     "sample_scripts": [
       {
@@ -80,6 +88,10 @@
         "title": "HunyuanVideo-1.5 480P I2V step-distilled smoke test",
         "commands": [
           "[ -n \"${INPUT_IMAGE:-}\" ] || { echo \"Set INPUT_IMAGE=/path/to/input.png before running.\" >&2; exit 1; }",
+          "[ -d \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\" ] || { echo \"Missing Qwen2.5-VL-7B-Instruct under $WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\" >&2; exit 1; }",
+          "[ -d \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/byt5-small\" ] || { echo \"Missing google/byt5-small under $WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/byt5-small\" >&2; exit 1; }",
+          "[ -d \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/Glyph-SDXL-v2\" ] || { echo \"Missing Glyph-SDXL-v2 under $WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/Glyph-SDXL-v2\" >&2; exit 1; }",
+          "[ -d \"$WEIGHTS_ROOT/hunyuanvideo-1.5/vision_encoder/siglip\" ] || { echo \"Missing SigLIP encoder under $WEIGHTS_ROOT/hunyuanvideo-1.5/vision_encoder/siglip\" >&2; exit 1; }",
           "cd \"$CODE_ROOT/HunyuanVideo-1.5\"",
           "mkdir -p \"$OUTPUT_ROOT/hunyuanvideo-1.5\"",
           "export PYTORCH_CUDA_ALLOC_CONF=\"${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True,max_split_size_mb:128}\"",
@@ -132,26 +144,32 @@
     ],
     "install_steps": [
       "pip install uv",
-      "uv venv .venv",
-      "source .venv/bin/activate",
+      "uv venv --python /usr/bin/python3.10 .venv310",
+      "source .venv310/bin/activate",
       "uv pip install setuptools",
       "uv pip install -e . --no-build-isolation",
+      "uv pip install --python .venv310/bin/python --force-reinstall torch==2.8.0 torchvision==0.23.0 --index-url https://download.pytorch.org/whl/cu128  # DPLab 570.x-compatible torch stack",
       "uv pip install -e .[flash] --no-build-isolation  # optional"
     ],
     "notes": [
       "The official repo uses uv already, so this is the cleanest upstream environment to reproduce on DPLab.",
       "Install ffmpeg before trying to export videos from the CLI or Gradio UI.",
-      "CPU offload is only supported in single-GPU mode."
+      "CPU offload is only supported in single-GPU mode.",
+      "On DPLab's current 570.124.06 driver, the default uv resolution pulled torch 2.11.0+cu130 and failed CUDA initialization; force the cu128 torch/torchvision pair above before smoke testing.",
+      "The CLI also loads google/t5-v1_1-xxl through Hugging Face cache. Treat that text encoder as a separate heavyweight dependency and pre-populate it intentionally instead of letting the sample script fetch it implicitly."
     ],
     "download_steps": [
       "cd \"$CODE_ROOT/mochi\"",
-      "python3 ./scripts/download_weights.py \"$WEIGHTS_ROOT/mochi-1-preview\""
+      "python3 ./scripts/download_weights.py \"$WEIGHTS_ROOT/mochi-1-preview\"",
+      "echo \"Mochi also needs google/t5-v1_1-xxl in $HF_HOME/hub/models--google--t5-v1_1-xxl; pre-populate that cache intentionally before running mochi_cli.sh.\""
     ],
     "sample_scripts": [
       {
         "filename": "mochi_cli.sh",
         "title": "Mochi 1 CLI smoke test",
         "commands": [
+          "[ -d \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" ] || { echo \"Missing google/t5-v1_1-xxl in $HF_HOME/hub/models--google--t5-v1_1-xxl. Populate the HF cache intentionally before running Mochi.\" >&2; exit 1; }",
+          "export CUDA_VISIBLE_DEVICES=\"${CUDA_VISIBLE_DEVICES:-0}\"",
           "cd \"$CODE_ROOT/mochi\"",
           "mkdir -p \"$OUTPUT_ROOT/mochi-1\"",
           "python3 ./demos/cli.py --model_dir \"$WEIGHTS_ROOT/mochi-1-preview\" --cpu_offload --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --seed \"${SEED:-12345}\" --out_dir \"$OUTPUT_ROOT/mochi-1\""

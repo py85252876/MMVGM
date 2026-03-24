@@ -115,6 +115,14 @@ python scripts/open_model_server_setup.py \
 Add `--clone-repos` if you want it to perform code-only clones for the upstream
 repos under `--code-root`.
 
+The generated smoke-test helpers are intentionally conservative:
+
+- `sample_runs/mochi_cli.sh` now pins Mochi to single-GPU mode and refuses to
+  auto-download `google/t5-v1_1-xxl`; populate that Hugging Face cache
+  explicitly first.
+- `sample_runs/hunyuan_i2v_step_distilled.sh` now checks for the extra text and
+  vision encoders listed in `checkpoints-download.md` before launching.
+
 
 ### Detection and Source tracing model dependencies
 
