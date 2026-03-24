@@ -169,6 +169,8 @@
         "title": "Mochi 1 CLI smoke test",
         "commands": [
           "[ -d \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" ] || { echo \"Missing google/t5-v1_1-xxl in $HF_HOME/hub/models--google--t5-v1_1-xxl. Populate the HF cache intentionally before running Mochi.\" >&2; exit 1; }",
+          "! find \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" -name \"*.incomplete\" -print -quit | grep -q . || { echo \"Found incomplete google/t5-v1_1-xxl downloads under $HF_HOME. Finish or clean them before running Mochi.\" >&2; exit 1; }",
+          "[ \"$(du -sm \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" | awk '{print $1}')\" -ge 20000 ] || { echo \"google/t5-v1_1-xxl cache under $HF_HOME looks incomplete (<20G). Populate it explicitly before running Mochi.\" >&2; exit 1; }",
           "export CUDA_VISIBLE_DEVICES=\"${CUDA_VISIBLE_DEVICES:-0}\"",
           "cd \"$CODE_ROOT/mochi\"",
           "mkdir -p \"$OUTPUT_ROOT/mochi-1\"",
