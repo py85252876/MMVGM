@@ -119,12 +119,17 @@ The generated smoke-test helpers are intentionally conservative:
 
 - `sample_runs/mochi_cli.sh` now pins Mochi to single-GPU mode and refuses to
   auto-download `google/t5-v1_1-xxl`; populate that Hugging Face cache
-  explicitly first.
+  explicitly first. It also inherits `HF_TOKEN_PATH` so the helper does not
+  silently fall back to anonymous Hub requests.
 - `sample_runs/hunyuan_i2v_step_distilled.sh` now checks for the extra text and
-  vision encoders listed in `checkpoints-download.md` before launching.
+  vision encoders listed in `checkpoints-download.md` before launching, and it
+  defaults to shorter smoke-test settings (`VIDEO_LENGTH=49`,
+  `NUM_INFERENCE_STEPS=8`) unless you override them.
 - `sample_runs/hunyuan_t2v_480p.sh` is the fallback when `FLUX.1-Redux-dev`
   access is not approved yet; only the `I2V` path needs the gated `SigLIP`
-  vision encoder.
+  vision encoder. It now also verifies the local `scheduler/`, `vae/`, and
+  `transformer/480p_t2v/` checkpoint layout before starting, and defaults to
+  `VIDEO_LENGTH=49` with `NUM_INFERENCE_STEPS=12` for a quicker smoke test.
 
 
 ### Detection and Source tracing model dependencies
