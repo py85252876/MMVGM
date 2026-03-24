@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vgmshield"
+version = "0.1.0"
+description = "Detection, source tracing, and misuse-prevention tooling for video generative models."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+training = [
+  "av",
+  "numpy",
+  "pandas",
+  "scikit-learn",
+  "tqdm",
+  "transformers",
+]
+misuse-prevention = [
+  "einops",
+  "fire",
+  "lpips-pytorch",
+  "numpy",
+  "omegaconf",
+  "pillow",
+]
+
+[dependency-groups]
+dev = ["ruff>=0.11.0"]
+
+[tool.setuptools.packages.find]
+include = [
+  "detection_and_source_tracing*",
+  "misuse_prevention*",
+  "utils*",
+]
+
+[tool.uv]
+default-groups = []
