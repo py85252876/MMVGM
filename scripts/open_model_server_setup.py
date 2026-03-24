@@ -37,6 +37,7 @@ class CodebaseEntry:
     repo_url: str
     setup_reference: str
     python_version: str
+    venv_dir: str
     recommended: bool
     models_supported: List[str]
     install_steps: List[str]
@@ -145,6 +146,17 @@ def render_sample_script(args: argparse.Namespace, entry: CodebaseEntry, sample:
     lines = shell_header(args)
     lines.append(f'echo "Running {sample.title}"')
     lines.append("")
+    lines.extend(
+        [
+            f'if [ ! -d "$CODE_ROOT/{entry.repo_dir}/{entry.venv_dir}" ]; then',
+            f'  echo "Missing virtual environment: $CODE_ROOT/{entry.repo_dir}/{entry.venv_dir}" >&2',
+            '  echo "Bootstrap the upstream repo environment first, then rerun this script." >&2',
+            "  exit 1",
+            "fi",
+            f'source "$CODE_ROOT/{entry.repo_dir}/{entry.venv_dir}/bin/activate"',
+            "",
+        ]
+    )
     lines.extend(sample.commands)
     lines.append("")
     return "\n".join(lines)
@@ -159,6 +171,7 @@ def render_checklist(args: argparse.Namespace, entry: CodebaseEntry) -> str:
         f"- Clone path: {args.code_root / entry.repo_dir}",
         f"- Setup reference: {entry.setup_reference}",
         f"- Python: {entry.python_version}",
+        f"- Expected venv: {args.code_root / entry.repo_dir / entry.venv_dir}",
         f"- MMVGM model slugs: {', '.join(entry.models_supported)}",
         "",
         "## Install",

@@ -7,6 +7,7 @@
     "repo_url": "https://github.com/Wan-Video/Wan2.1",
     "setup_reference": "https://github.com/Wan-Video/Wan2.1#installation",
     "python_version": "Python 3.10+",
+    "venv_dir": ".venv310",
     "recommended": true,
     "models_supported": [
       "wan2.1-t2v-14b",
@@ -55,6 +56,7 @@
     "repo_url": "https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5",
     "setup_reference": "https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5#-dependencies-and-installation",
     "python_version": "Python 3.10+",
+    "venv_dir": ".venv310",
     "recommended": true,
     "models_supported": [
       "hunyuanvideo-1.5-480p-i2v-step-distilled",
@@ -94,6 +96,7 @@
     "repo_url": "https://github.com/hpcaitech/Open-Sora",
     "setup_reference": "https://github.com/hpcaitech/Open-Sora#installation",
     "python_version": "Python 3.10",
+    "venv_dir": ".venv310",
     "recommended": false,
     "models_supported": [
       "open-sora-v2"
@@ -122,6 +125,7 @@
     "repo_url": "https://github.com/genmoai/mochi",
     "setup_reference": "https://github.com/genmoai/mochi#installation",
     "python_version": "Python 3.10+",
+    "venv_dir": ".venv310",
     "recommended": true,
     "models_supported": [
       "mochi-1-preview"
@@ -163,6 +167,7 @@
     "repo_url": "https://github.com/THUDM/CogVideo",
     "setup_reference": "https://huggingface.co/zai-org/CogVideoX1.5-5B-I2V",
     "python_version": "Python 3.10+",
+    "venv_dir": ".venv310",
     "recommended": false,
     "models_supported": [
       "cogvideox1.5-5b-i2v"
