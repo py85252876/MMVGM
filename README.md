@@ -86,6 +86,19 @@ python scripts/open_model_shortlist.py \
     --write-json manifests/open-models.json
 ```
 
+If you want to create an empty dataset skeleton on a shared server path:
+
+```bash
+python scripts/open_model_shortlist.py \
+    --format mmvgm-json \
+    --dataset-root /bigtemp/nkp2mr/shared-benchmarks/mmvgm-open-video-models \
+    --materialize-root /bigtemp/nkp2mr/shared-benchmarks/mmvgm-open-video-models \
+    --write-json /bigtemp/nkp2mr/shared-benchmarks/mmvgm-open-video-models/manifest.json
+```
+
+That command creates one empty directory per model plus `manifest.json`,
+`label_map.json`, and ready-to-edit `train_*.sh` / `eval_*.sh` helpers.
+
 
 ### Detection and Source tracing model dependencies
 

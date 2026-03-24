@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Sequence
 
 
 CONFIG_PATH = Path(__file__).resolve().parents[1] / "configs" / "open_video_models.json"
+DEFAULT_DATASET_ROOT = "datasets/open-video-models"
 
 
 @dataclass(frozen=True)
@@ -93,8 +94,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--dataset-root",
-        default="datasets/open-video-models",
+        default=DEFAULT_DATASET_ROOT,
         help="Root directory that contains one folder per generator slug.",
+    )
+    parser.add_argument(
+        "--materialize-root",
+        type=Path,
+        help=(
+            "Create empty dataset directories plus helper files under this root. "
+            "If --dataset-root is left at its default, this path also becomes the emitted dataset root."
+        ),
     )
     parser.add_argument(
         "--write-json",
@@ -316,6 +325,59 @@ def write_json(path: Path, payload: Dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def materialize_root(root: Path, manifest: Dict[str, Any]) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+
+    for entry in manifest["label_map"]:
+        Path(entry["dataset_path"]).mkdir(parents=True, exist_ok=True)
+
+    write_json(root / "manifest.json", manifest)
+    write_json(root / "label_map.json", {"label_map": manifest["label_map"]})
+
+    train_script = root / f"train_{manifest['backbone']}.sh"
+    train_script.write_text(
+        "#!/usr/bin/env bash\nset -euo pipefail\n\n"
+        + manifest["train_command_shell"]
+        + "\n",
+        encoding="utf-8",
+    )
+    train_script.chmod(0o755)
+
+    eval_script = root / f"eval_{manifest['backbone']}.sh"
+    eval_script.write_text(
+        "#!/usr/bin/env bash\nset -euo pipefail\n\n"
+        + manifest["eval_command_shell"]
+        + "\n",
+        encoding="utf-8",
+    )
+    eval_script.chmod(0o755)
+
+    lines = [
+        "# MMVGM Open-Model Staging",
+        "",
+        "This directory contains an empty dataset skeleton for MMVGM source tracing.",
+        "Populate each model directory with generated `.mp4` files before training or evaluation.",
+        "No checkpoints or generator weights are downloaded by this script.",
+        "",
+        "## Labels",
+    ]
+    for entry in manifest["label_map"]:
+        lines.append(
+            f"- {entry['label']}: {entry['slug']} ({entry['weights_license']}) -> {entry['dataset_path']}"
+        )
+    lines.extend(
+        [
+            "",
+            "## Helper Files",
+            f"- `manifest.json`: full MMVGM manifest for this layout",
+            f"- `label_map.json`: compact label mapping",
+            f"- `train_{manifest['backbone']}.sh`: training command skeleton",
+            f"- `eval_{manifest['backbone']}.sh`: evaluation command skeleton",
+        ]
+    )
+    (root / "README.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def render_mmvgm_shell(manifest: Dict[str, Any]) -> str:
     label_lines = [
         f"# {entry['label']}: {entry['slug']} -> {entry['dataset_path']}"
@@ -341,7 +403,14 @@ def main() -> None:
 
     models = select_models(load_models(), args)
 
+    dataset_root = args.dataset_root
+    if args.materialize_root and dataset_root == DEFAULT_DATASET_ROOT:
+        dataset_root = str(args.materialize_root)
+
     if args.format == "table":
+        if args.materialize_root:
+            manifest = build_mmvgm_manifest(models, dataset_root, args.backbone)
+            materialize_root(args.materialize_root, manifest)
         print(render_table(models))
         return
 
@@ -352,7 +421,9 @@ def main() -> None:
         print(json.dumps(payload, indent=2))
         return
 
-    manifest = build_mmvgm_manifest(models, args.dataset_root, args.backbone)
+    manifest = build_mmvgm_manifest(models, dataset_root, args.backbone)
+    if args.materialize_root:
+        materialize_root(args.materialize_root, manifest)
     if args.format == "mmvgm-json":
         if args.write_json:
             write_json(args.write_json, manifest)
