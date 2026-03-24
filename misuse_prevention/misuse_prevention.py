@@ -27,7 +27,7 @@ def _runtime() -> SimpleNamespace:
         from sgm.util import default, instantiate_from_config
     except ModuleNotFoundError as exc:
         raise ModuleNotFoundError(
-            "misuse_prevention requires `uv sync --extra misuse-prevention` and "
+            "misuse_prevention requires `uv pip install -e '.[misuse-prevention]'` and "
             "the Stable Video Diffusion checkout on PYTHONPATH."
         ) from exc
 

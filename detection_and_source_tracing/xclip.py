@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import warnings
 from pathlib import Path
@@ -147,7 +148,7 @@ def build_dataframe(args):
 
     return pd.DataFrame({"video_path": video_paths, "labels": labels})
 
-def create_dataloader(df, processor, batch_size):
+def create_dataloader(df, processor, batch_size, drop_last=False):
     dataset = mydataset.XCLIPDataset(
         videos_file=df["video_path"],
         labels=df["labels"],
@@ -157,7 +158,7 @@ def create_dataloader(df, processor, batch_size):
         dataset,
         batch_size=batch_size,
         num_workers=0,
-        drop_last=False,
+        drop_last=drop_last,
     )
 
 
@@ -170,10 +171,11 @@ def find_video_files(directory):
                 video_files.append(full_path)
     return video_files
 
-def train_model(model, data_loader, loss_fn, optimizer, scheduler, n_examples, device):
+def train_model(model, data_loader, loss_fn, optimizer, scheduler, device):
     model = model.train()
     losses = []
     correct_predictions = 0
+    examples_seen = 0
     all_preds = []
     all_labels = []
     for d in tqdm(data_loader, desc="Training", leave=False):
@@ -184,6 +186,7 @@ def train_model(model, data_loader, loss_fn, optimizer, scheduler, n_examples, d
         preds = output.argmax(dim=1)
         loss = loss_fn(output, label)
         correct_predictions += torch.sum(preds == label)
+        examples_seen += label.size(0)
         losses.append(loss.item())
         loss.backward()
         optimizer.step()
@@ -191,20 +194,21 @@ def train_model(model, data_loader, loss_fn, optimizer, scheduler, n_examples, d
         optimizer.zero_grad()
         all_preds.extend(preds.cpu().numpy())
         all_labels.extend(label.cpu().numpy())
-    total_loss = sum(losses) / len(losses)
-    total_correct = correct_predictions.double() / len(data_loader.dataset)
+    if not losses:
+        raise ValueError("No training batches available after preprocessing.")
 
     all_preds = np.array(all_preds)
     all_labels = np.array(all_labels)
 
     print(classification_report(all_labels, all_preds),flush=True)
         
-    return correct_predictions.double() / n_examples, np.mean(losses)
+    return correct_predictions.double() / examples_seen, np.mean(losses)
 
-def eval_model(model, data_loader, loss_fn, n_examples, device):
+def eval_model(model, data_loader, loss_fn, device):
     model = model.eval()
     losses = []
     correct_predictions = 0
+    examples_seen = 0
 
     with torch.no_grad():
         all_preds = []
@@ -217,18 +221,19 @@ def eval_model(model, data_loader, loss_fn, n_examples, device):
             preds = output.argmax(dim=1)
             loss = loss_fn(output, label)
             correct_predictions += torch.sum(preds == label)
+            examples_seen += label.size(0)
             losses.append(loss.item())
             all_preds.extend(preds.cpu().numpy())
             all_labels.extend(label.cpu().numpy())
-        total_loss = sum(losses) / len(losses)
-        total_correct = correct_predictions.double() / len(data_loader.dataset)
+        if not losses:
+            raise ValueError("No evaluation batches available after preprocessing.")
 
         all_preds = np.array(all_preds)
         all_labels = np.array(all_labels)
 
         print(classification_report(all_labels, all_preds))
 
-        return correct_predictions.double() / n_examples, np.mean(losses)
+        return correct_predictions.double() / examples_seen, np.mean(losses)
 
 def hf_kwargs(args):
     if args.hf_cache_dir:
@@ -255,7 +260,12 @@ def main(args):
         )
         df_train = df_train.reset_index(drop=True)
         df_val = df_val.reset_index(drop=True)
-        train_data_loader = create_dataloader(df_train, processor, args.batch_size)
+        train_data_loader = create_dataloader(
+            df_train,
+            processor,
+            args.batch_size,
+            drop_last=True,
+        )
         val_data_loader = create_dataloader(df_val, processor, args.batch_size)
 
         EPOCHS = args.epoch
@@ -283,18 +293,11 @@ def main(args):
                 loss_fn,
                 optimizer,
                 scheduler,
-                len(train_data_loader.dataset),
                 device,
             )
             print(f"Train Loss: {train_loss} ; Train Accuracy: {train_acc}")
             
-            val_acc, val_loss = eval_model(
-                video_cls,
-                val_data_loader,
-                loss_fn,
-                len(val_data_loader.dataset),
-                device,
-            )
+            val_acc, val_loss = eval_model(video_cls, val_data_loader, loss_fn, device)
             print(f"Val Loss: {val_loss} ; Val Accuracy: {val_acc}")
         Path(args.save_checkpoint_dir).parent.mkdir(parents=True, exist_ok=True)
         torch.save(video_cls.state_dict(), args.save_checkpoint_dir)
@@ -313,7 +316,7 @@ def main(args):
 
         val_data_loader = create_dataloader(df_data, processor, args.batch_size)
         loss_fn = torch.nn.CrossEntropyLoss()
-        val_acc, val_loss = eval_model(video_cls, val_data_loader, loss_fn, len(val_data_loader.dataset), device)
+        val_acc, val_loss = eval_model(video_cls, val_data_loader, loss_fn, device)
         print(f"Val Loss: {val_loss} ; Val Accuracy: {val_acc}")
 
 def cli():

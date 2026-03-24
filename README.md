@@ -12,8 +12,9 @@ legacy conda environment files.
 ## Setup With uv
 
 This repo now uses `uv` instead of checked-in conda YAMLs. No lockfile is
-committed, so `uv sync` resolves the latest compatible package versions when
-you bootstrap the environment.
+committed, so the recommended workflow is `uv pip install -e ...`, which keeps
+your platform-specific PyTorch wheel intact while resolving the latest
+compatible project dependencies.
 
 1. Create a virtual environment:
 
@@ -38,10 +39,10 @@ uv pip install --index-url https://download.pytorch.org/whl/cu128 torch torchvis
 
 ```bash
 # Detection + source tracing
-uv sync --extra training
+uv pip install -e ".[training]"
 
 # Everything, including misuse-prevention helpers
-uv sync --all-extras
+uv pip install -e ".[training,misuse-prevention]"
 ```
 
 4. Download the I3D RGB ImageNet checkpoint only if you need the I3D pipeline:
