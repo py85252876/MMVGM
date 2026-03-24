@@ -122,6 +122,9 @@ The generated smoke-test helpers are intentionally conservative:
   explicitly first.
 - `sample_runs/hunyuan_i2v_step_distilled.sh` now checks for the extra text and
   vision encoders listed in `checkpoints-download.md` before launching.
+- `sample_runs/hunyuan_t2v_480p.sh` is the fallback when `FLUX.1-Redux-dev`
+  access is not approved yet; only the `I2V` path needs the gated `SigLIP`
+  vision encoder.
 
 
 ### Detection and Source tracing model dependencies

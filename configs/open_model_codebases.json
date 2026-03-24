@@ -73,7 +73,8 @@
       "Use --rewrite false if you do not have a vLLM-compatible prompt rewrite service.",
       "For the 480p step-distilled I2V checkpoint, the upstream README recommends 8 or 12 steps.",
       "The upstream checkpoints-download guide also requires Qwen2.5-VL-7B-Instruct, google/byt5-small, Glyph-SDXL-v2, and a gated SigLIP encoder from FLUX.1-Redux-dev.",
-      "On DPLab's current 570.124.06 driver, the torch/torchvision/torchaudio 2.6.0 trio resolves cleanly via the cu126 index."
+      "On DPLab's current 570.124.06 driver, the torch/torchvision/torchaudio 2.6.0 trio resolves cleanly via the cu126 index.",
+      "If FLUX.1-Redux-dev access is not approved yet, use the T2V smoke test first; only the I2V path needs the SigLIP vision encoder."
     ],
     "download_steps": [
       "huggingface-cli download tencent/HunyuanVideo-1.5 --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5\"",
@@ -83,6 +84,19 @@
       "echo \"Request FLUX.1-Redux-dev access, then download the SigLIP encoder into $WEIGHTS_ROOT/hunyuanvideo-1.5/vision_encoder/siglip before running the Hunyuan smoke test.\""
     ],
     "sample_scripts": [
+      {
+        "filename": "hunyuan_t2v_480p.sh",
+        "title": "HunyuanVideo-1.5 480P T2V smoke test",
+        "commands": [
+          "[ -d \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\" ] || { echo \"Missing Qwen2.5-VL-7B-Instruct under $WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\" >&2; exit 1; }",
+          "[ -d \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/byt5-small\" ] || { echo \"Missing google/byt5-small under $WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/byt5-small\" >&2; exit 1; }",
+          "[ -d \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/Glyph-SDXL-v2\" ] || { echo \"Missing Glyph-SDXL-v2 under $WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/Glyph-SDXL-v2\" >&2; exit 1; }",
+          "cd \"$CODE_ROOT/HunyuanVideo-1.5\"",
+          "mkdir -p \"$OUTPUT_ROOT/hunyuanvideo-1.5\"",
+          "export PYTORCH_CUDA_ALLOC_CONF=\"${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True,max_split_size_mb:128}\"",
+          "torchrun --nproc_per_node=\"${NPROC_PER_NODE:-1}\" generate.py --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --image_path None --resolution 480p --aspect_ratio 16:9 --seed \"${SEED:-1}\" --rewrite false --cfg_distilled false --enable_step_distill false --use_sageattn false --sparse_attn false --enable_cache true --cache_type deepcache --overlap_group_offloading false --sr false --output_path \"$OUTPUT_ROOT/hunyuanvideo-1.5/hunyuanvideo-1.5-t2v.mp4\" --model_path \"$WEIGHTS_ROOT/hunyuanvideo-1.5\""
+        ]
+      },
       {
         "filename": "hunyuan_i2v_step_distilled.sh",
         "title": "HunyuanVideo-1.5 480P I2V step-distilled smoke test",
