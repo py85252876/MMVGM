@@ -18,6 +18,7 @@ This repository contains:
 - [📄 Table of Contents](#-table-of-contents)
 - [🛠️ Download Dependencies](#-download-dependencies)
 	- [Video generation models dependencies](#video-generation-models-dependencies)
+	- [2026 open-source shortlist](#2026-open-source-shortlist)
 	- [Detection and Source tracing model dependencies](#detection-and-source-tracing-model-dependencies)
 	    - [I3D dependencies](#i3d-dependencies)
 	    - [X-CLIP and VideoMAE dependencies](#x-clip-and-videomae-dependencies)
@@ -32,6 +33,87 @@ This repository contains:
 ### Video generation models dependencies
 
 Our experiments include nine different generative tasks for each generation model environment. Please refer to their repository respectively: [Hotshot-xl](https://github.com/hotshotco/Hotshot-XL) [I2Vgen-xl](https://github.com/ali-vilab/i2vgen-xl) [Show-1](https://github.com/showlab/Show-1) [Videocrafter](https://github.com/AILab-CVC/VideoCrafter) [SEINE](https://github.com/Vchitect/SEINE) [LaVie](https://github.com/Vchitect/LaVie) [Stable Video Diffusion](https://github.com/Stability-AI/generative-models) .
+
+### 2026 open-source shortlist
+
+The paper-era lineup is still useful, but the open-source video model ecosystem
+has moved quickly. This repository now includes a curated registry at
+[configs/open_video_models.json](configs/open_video_models.json) and a helper
+script at [scripts/open_model_shortlist.py](scripts/open_model_shortlist.py) so
+you can swap in newer backbones without committing any model weights here.
+
+View the default MMVGM shortlist:
+
+```bash
+python scripts/open_model_shortlist.py
+```
+
+Limit the shortlist to permissive licenses and known low-memory entries:
+
+```bash
+python scripts/open_model_shortlist.py \
+    --include-optional \
+    --license apache-2.0 \
+    --max-vram-gb 24 \
+    --sort vram
+```
+
+Emit an MMVGM source-tracing command skeleton and label map for a local dataset layout:
+
+```bash
+python scripts/open_model_shortlist.py \
+    --format mmvgm-shell \
+    --backbone xclip \
+    --dataset-root /data/vgmshield/open-models
+```
+
+This expects a folder layout like:
+
+```text
+/data/vgmshield/open-models/
+├── wan2.1-t2v-14b/
+├── wan2.1-i2v-14b-720p/
+├── hunyuanvideo-1.5-480p-i2v-step-distilled/
+├── open-sora-v2/
+└── mochi-1-preview/
+```
+
+If you want a machine-readable manifest instead of shell commands:
+
+```bash
+python scripts/open_model_shortlist.py \
+    --format mmvgm-json \
+    --write-json manifests/open-models.json
+```
+
+If you want to create an empty dataset skeleton on a shared server path:
+
+```bash
+python scripts/open_model_shortlist.py \
+    --format mmvgm-json \
+    --dataset-root /bigtemp/nkp2mr/shared-benchmarks/mmvgm-open-video-models \
+    --materialize-root /bigtemp/nkp2mr/shared-benchmarks/mmvgm-open-video-models \
+    --write-json /bigtemp/nkp2mr/shared-benchmarks/mmvgm-open-video-models/manifest.json
+```
+
+That command creates one empty directory per model plus `manifest.json`,
+`label_map.json`, and ready-to-edit `train_*.sh` / `eval_*.sh` helpers.
+
+If you also want a server-side playbook for staging upstream generator repos and
+smoke-test commands, use:
+
+```bash
+python scripts/open_model_server_setup.py \
+    --plan-root server/open-models \
+    --code-root /u/nkp2mr/open-video-models \
+    --weights-root /bigtemp/nkp2mr/shared-benchmarks/open-video-model-weights \
+    --output-root /bigtemp/nkp2mr/shared-benchmarks/open-video-model-samples \
+    --hf-home /bigtemp/nkp2mr/huggingface-shared \
+    --dataset-root /bigtemp/nkp2mr/shared-benchmarks/mmvgm-open-video-models
+```
+
+Add `--clone-repos` if you want it to perform code-only clones for the upstream
+repos under `--code-root`.
 
 
 ### Detection and Source tracing model dependencies
@@ -62,10 +144,12 @@ This part provides instructions on how to train different backbone detection and
 First, enter [detection and source tracing directory](./detection_and_source_tracing)
 
 ```bash
-cd direction_and_source_tracing
+cd detection_and_source_tracing
 ```
 
-> Note: The default setting for source tracing is the nine generation tasks as we mentioned in our paper. Please change the code for your own tasks.
+> Note: The paper uses nine generation tasks for source tracing, but you can
+> now scaffold a smaller modern lineup with
+> `python ../scripts/open_model_shortlist.py --format mmvgm-shell`.
 
 - **Training I3D-based detection model**
 
@@ -227,4 +311,3 @@ python misuse_prevention.py --input_path original_image --directed False --steps
 ## 🥰 Acknowledgement
 
 We feel gratitude for the previous open-source work that helped us construct our **VGMShield**. These works include but are not limited to [Video Features](https://github.com/v-iashin/video_features), [VideoX](https://github.com/microsoft/VideoX),[Hotshot-xl](https://github.com/hotshotco/Hotshot-XL), [I2Vgen-xl](https://github.com/ali-vilab/i2vgen-xl), [Show-1](https://github.com/showlab/Show-1), [Videocrafter](https://github.com/AILab-CVC/VideoCrafter), [SEINE](https://github.com/Vchitect/SEINE), [LaVie](https://github.com/Vchitect/LaVie), and [Stable Video Diffusion](https://github.com/Stability-AI/generative-models). We respect their effort and original contributions.
-

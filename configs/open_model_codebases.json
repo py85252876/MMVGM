@@ -1,0 +1,189 @@
+[
+  {
+    "slug": "wan2.1",
+    "name": "Wan2.1",
+    "repo_dir": "Wan2.1",
+    "clone_url": "https://github.com/Wan-Video/Wan2.1.git",
+    "repo_url": "https://github.com/Wan-Video/Wan2.1",
+    "setup_reference": "https://github.com/Wan-Video/Wan2.1#installation",
+    "python_version": "Python 3.10+",
+    "venv_dir": ".venv310",
+    "recommended": true,
+    "models_supported": [
+      "wan2.1-t2v-14b",
+      "wan2.1-i2v-14b-720p",
+      "wan2.1-t2v-1.3b"
+    ],
+    "install_steps": [
+      "pip install -r requirements.txt"
+    ],
+    "notes": [
+      "Official README requires torch >= 2.4.0.",
+      "Use --offload_model True and --t5_cpu when memory is tight on single-GPU hosts.",
+      "The same codebase covers both the T2V and I2V checkpoints."
+    ],
+    "download_steps": [
+      "huggingface-cli download Wan-AI/Wan2.1-T2V-14B --local-dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-14B\"",
+      "huggingface-cli download Wan-AI/Wan2.1-I2V-14B-720P --local-dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-I2V-14B-720P\""
+    ],
+    "sample_scripts": [
+      {
+        "filename": "wan_t2v_14b.sh",
+        "title": "Wan2.1 T2V 14B smoke test",
+        "commands": [
+          "cd \"$CODE_ROOT/Wan2.1\"",
+          "mkdir -p \"$OUTPUT_ROOT/wan2.1\"",
+          "python generate.py --task t2v-14B --size 1280*720 --ckpt_dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-14B\" --offload_model True --prompt \"${PROMPT:-Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.}\" --save_file \"$OUTPUT_ROOT/wan2.1/wan2.1-t2v-14b.mp4\""
+        ]
+      },
+      {
+        "filename": "wan_i2v_14b_720p.sh",
+        "title": "Wan2.1 I2V 14B 720P smoke test",
+        "commands": [
+          "[ -n \"${INPUT_IMAGE:-}\" ] || { echo \"Set INPUT_IMAGE=/path/to/input.jpg before running.\" >&2; exit 1; }",
+          "cd \"$CODE_ROOT/Wan2.1\"",
+          "mkdir -p \"$OUTPUT_ROOT/wan2.1\"",
+          "python generate.py --task i2v-14B --size 1280*720 --ckpt_dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-I2V-14B-720P\" --image \"$INPUT_IMAGE\" --offload_model True --prompt \"${PROMPT:-Summer beach vacation style, a white cat wearing sunglasses sits on a surfboard.}\" --save_file \"$OUTPUT_ROOT/wan2.1/wan2.1-i2v-14b-720p.mp4\""
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "hunyuanvideo-1.5",
+    "name": "HunyuanVideo-1.5",
+    "repo_dir": "HunyuanVideo-1.5",
+    "clone_url": "https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5.git",
+    "repo_url": "https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5",
+    "setup_reference": "https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5#-dependencies-and-installation",
+    "python_version": "Python 3.10+",
+    "venv_dir": ".venv310",
+    "recommended": true,
+    "models_supported": [
+      "hunyuanvideo-1.5-480p-i2v-step-distilled",
+      "hunyuanvideo-1.5-480p-t2v"
+    ],
+    "install_steps": [
+      "pip install -r requirements.txt",
+      "pip install -i https://mirrors.tencent.com/pypi/simple/ --upgrade tencentcloud-sdk-python"
+    ],
+    "notes": [
+      "Official source-code inference supports both T2V and I2V through generate.py.",
+      "Use --rewrite false if you do not have a vLLM-compatible prompt rewrite service.",
+      "For the 480p step-distilled I2V checkpoint, the upstream README recommends 8 or 12 steps."
+    ],
+    "download_steps": [
+      "huggingface-cli download tencent/HunyuanVideo-1.5 --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5\""
+    ],
+    "sample_scripts": [
+      {
+        "filename": "hunyuan_i2v_step_distilled.sh",
+        "title": "HunyuanVideo-1.5 480P I2V step-distilled smoke test",
+        "commands": [
+          "[ -n \"${INPUT_IMAGE:-}\" ] || { echo \"Set INPUT_IMAGE=/path/to/input.png before running.\" >&2; exit 1; }",
+          "cd \"$CODE_ROOT/HunyuanVideo-1.5\"",
+          "mkdir -p \"$OUTPUT_ROOT/hunyuanvideo-1.5\"",
+          "export PYTORCH_CUDA_ALLOC_CONF=\"${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True,max_split_size_mb:128}\"",
+          "torchrun --nproc_per_node=\"${NPROC_PER_NODE:-1}\" generate.py --prompt \"${PROMPT:-Summer beach vacation style, a white cat wearing sunglasses sits on a surfboard.}\" --image_path \"$INPUT_IMAGE\" --resolution 480p --aspect_ratio 16:9 --seed \"${SEED:-1}\" --rewrite false --cfg_distilled true --enable_step_distill true --use_sageattn false --sparse_attn false --enable_cache true --cache_type deepcache --overlap_group_offloading false --sr false --output_path \"$OUTPUT_ROOT/hunyuanvideo-1.5/hunyuanvideo-1.5-i2v.mp4\" --model_path \"$WEIGHTS_ROOT/hunyuanvideo-1.5\""
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "open-sora-v2",
+    "name": "Open-Sora v2",
+    "repo_dir": "Open-Sora",
+    "clone_url": "https://github.com/hpcaitech/Open-Sora.git",
+    "repo_url": "https://github.com/hpcaitech/Open-Sora",
+    "setup_reference": "https://github.com/hpcaitech/Open-Sora#installation",
+    "python_version": "Python 3.10",
+    "venv_dir": ".venv310",
+    "recommended": false,
+    "models_supported": [
+      "open-sora-v2"
+    ],
+    "install_steps": [
+      "pip install -v .",
+      "pip install xformers==0.0.27.post2 --index-url https://download.pytorch.org/whl/cu121",
+      "pip install flash-attn --no-build-isolation"
+    ],
+    "notes": [
+      "The current repo tree uses configs under configs/diffusion/inference/, for example 256px.py.",
+      "Those configs expect repo-relative checkpoint files under ./ckpts, including Open_Sora_v2.safetensors, hunyuan_vae.safetensors, T5, CLIP, and flux plugin weights.",
+      "This is the heaviest setup in the shortlist, so it stays as a research baseline rather than a first smoke test."
+    ],
+    "download_steps": [
+      "huggingface-cli download hpcai-tech/Open-Sora-v2 --local-dir \"$WEIGHTS_ROOT/open-sora-v2/hf\"",
+      "echo \"Copy or symlink the required checkpoint files into $CODE_ROOT/Open-Sora/ckpts to match configs/diffusion/inference/*.py\""
+    ],
+    "sample_scripts": []
+  },
+  {
+    "slug": "mochi-1",
+    "name": "Mochi 1",
+    "repo_dir": "mochi",
+    "clone_url": "https://github.com/genmoai/mochi.git",
+    "repo_url": "https://github.com/genmoai/mochi",
+    "setup_reference": "https://github.com/genmoai/mochi#installation",
+    "python_version": "Python 3.10+",
+    "venv_dir": ".venv310",
+    "recommended": true,
+    "models_supported": [
+      "mochi-1-preview"
+    ],
+    "install_steps": [
+      "pip install uv",
+      "uv venv .venv",
+      "source .venv/bin/activate",
+      "uv pip install setuptools",
+      "uv pip install -e . --no-build-isolation",
+      "uv pip install -e .[flash] --no-build-isolation  # optional"
+    ],
+    "notes": [
+      "The official repo uses uv already, so this is the cleanest upstream environment to reproduce on DPLab.",
+      "Install ffmpeg before trying to export videos from the CLI or Gradio UI.",
+      "CPU offload is only supported in single-GPU mode."
+    ],
+    "download_steps": [
+      "cd \"$CODE_ROOT/mochi\"",
+      "python3 ./scripts/download_weights.py \"$WEIGHTS_ROOT/mochi-1-preview\""
+    ],
+    "sample_scripts": [
+      {
+        "filename": "mochi_cli.sh",
+        "title": "Mochi 1 CLI smoke test",
+        "commands": [
+          "cd \"$CODE_ROOT/mochi\"",
+          "mkdir -p \"$OUTPUT_ROOT/mochi-1\"",
+          "python3 ./demos/cli.py --model_dir \"$WEIGHTS_ROOT/mochi-1-preview\" --cpu_offload --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --seed \"${SEED:-12345}\" --out_dir \"$OUTPUT_ROOT/mochi-1\""
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "cogvideox1.5",
+    "name": "CogVideoX1.5",
+    "repo_dir": "CogVideo",
+    "clone_url": "https://github.com/THUDM/CogVideo.git",
+    "repo_url": "https://github.com/THUDM/CogVideo",
+    "setup_reference": "https://huggingface.co/zai-org/CogVideoX1.5-5B-I2V",
+    "python_version": "Python 3.10+",
+    "venv_dir": ".venv310",
+    "recommended": false,
+    "models_supported": [
+      "cogvideox1.5-5b-i2v"
+    ],
+    "install_steps": [
+      "pip install git+https://github.com/huggingface/diffusers",
+      "pip install --upgrade transformers accelerate diffusers imageio-ffmpeg"
+    ],
+    "notes": [
+      "The model card recommends BF16 and lists 9 GB minimum GPU memory for single-GPU inference.",
+      "The published model card is English-only.",
+      "For first-pass MMVGM integration, treat this as a low-friction fallback rather than the primary benchmark family."
+    ],
+    "download_steps": [
+      "huggingface-cli download THUDM/CogVideoX1.5-5B-I2V --local-dir \"$WEIGHTS_ROOT/cogvideox1.5-5b-i2v\""
+    ],
+    "sample_scripts": []
+  }
+]
