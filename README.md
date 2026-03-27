@@ -136,7 +136,7 @@ The generated smoke-test helpers are intentionally conservative:
   `VIDEO_LENGTH=49` with `NUM_INFERENCE_STEPS=12` for a quicker smoke test. The
   Hunyuan smoke helpers also default to offline Hub mode so missing local files
   fail immediately instead of falling back to network fetches. By default they
-  stage the Hunyuan checkpoint tree to node-local `/tmp` before invoking
+  stage only the required Hunyuan subtrees to node-local `/tmp` before invoking
   `generate.py`; set `ENABLE_LOCAL_STAGE=0` if you explicitly want to run from
   shared storage.
 
