@@ -122,7 +122,9 @@ The generated smoke-test helpers are intentionally conservative:
   explicitly first. If your shell already defines `HF_TOKEN_PATH`, the helper
   preserves it; otherwise it does not guess a token-file location. It also
   defaults to offline Hub mode so an incomplete cache fails fast instead of
-  silently resuming a huge download.
+  silently resuming a huge download. By default it stages the Mochi weights and
+  the `google/t5-v1_1-xxl` cache subtree to node-local `/tmp` first; set
+  `ENABLE_LOCAL_STAGE=0` if you explicitly want to run from shared storage.
 - `sample_runs/hunyuan_i2v_step_distilled.sh` now checks for the extra text and
   vision encoders listed in `checkpoints-download.md` before launching, and it
   defaults to shorter smoke-test settings (`VIDEO_LENGTH=49`,
@@ -133,7 +135,10 @@ The generated smoke-test helpers are intentionally conservative:
   `transformer/480p_t2v/` checkpoint layout before starting, and defaults to
   `VIDEO_LENGTH=49` with `NUM_INFERENCE_STEPS=12` for a quicker smoke test. The
   Hunyuan smoke helpers also default to offline Hub mode so missing local files
-  fail immediately instead of falling back to network fetches.
+  fail immediately instead of falling back to network fetches. By default they
+  stage the Hunyuan checkpoint tree to node-local `/tmp` before invoking
+  `generate.py`; set `ENABLE_LOCAL_STAGE=0` if you explicitly want to run from
+  shared storage.
 
 
 ### Detection and Source tracing model dependencies

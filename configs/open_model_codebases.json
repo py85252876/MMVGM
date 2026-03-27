@@ -68,15 +68,16 @@
       "uv pip install --python .venv310/bin/python -r requirements.txt torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu126 --extra-index-url https://pypi.org/simple",
       "uv pip install --python .venv310/bin/python -i https://mirrors.tencent.com/pypi/simple/ --upgrade tencentcloud-sdk-python"
     ],
-    "notes": [
-      "Official source-code inference supports both T2V and I2V through generate.py.",
-      "Use --rewrite false if you do not have a vLLM-compatible prompt rewrite service.",
-      "For the 480p step-distilled I2V checkpoint, the upstream README recommends 8 or 12 steps.",
-      "The upstream checkpoints-download guide also requires Qwen2.5-VL-7B-Instruct, google/byt5-small, Glyph-SDXL-v2, and a gated SigLIP encoder from FLUX.1-Redux-dev.",
-      "On DPLab's current 570.124.06 driver, the torch/torchvision/torchaudio 2.6.0 trio resolves cleanly via the cu126 index.",
-      "If FLUX.1-Redux-dev access is not approved yet, use the T2V smoke test first; only the I2V path needs the SigLIP vision encoder.",
-      "For smoke tests, make sure the local checkpoint layout includes root config.json plus scheduler/, vae/, and the target transformer/* subtree before launching generate.py."
-    ],
+      "notes": [
+        "Official source-code inference supports both T2V and I2V through generate.py.",
+        "Use --rewrite false if you do not have a vLLM-compatible prompt rewrite service.",
+        "For the 480p step-distilled I2V checkpoint, the upstream README recommends 8 or 12 steps.",
+        "The upstream checkpoints-download guide also requires Qwen2.5-VL-7B-Instruct, google/byt5-small, Glyph-SDXL-v2, and a gated SigLIP encoder from FLUX.1-Redux-dev.",
+        "On DPLab's current 570.124.06 driver, the torch/torchvision/torchaudio 2.6.0 trio resolves cleanly via the cu126 index.",
+        "If FLUX.1-Redux-dev access is not approved yet, use the T2V smoke test first; only the I2V path needs the SigLIP vision encoder.",
+        "For smoke tests, make sure the local checkpoint layout includes root config.json plus scheduler/, vae/, and the target transformer/* subtree before launching generate.py.",
+        "The generated smoke helpers now stage the Hunyuan checkpoint tree to node-local disk by default so first-run inference does not stream the large transformer shards directly from /bigtemp."
+      ],
     "download_steps": [
       "huggingface-cli download tencent/HunyuanVideo-1.5 --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5\"",
       "huggingface-cli download Qwen/Qwen2.5-VL-7B-Instruct --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\"",
@@ -99,10 +100,11 @@
           "[ -f \"$WEIGHTS_ROOT/hunyuanvideo-1.5/transformer/480p_t2v/diffusion_pytorch_model.safetensors\" ] || { echo \"Missing 480p T2V transformer weights under $WEIGHTS_ROOT/hunyuanvideo-1.5/transformer/480p_t2v\" >&2; exit 1; }",
           "export HF_HUB_OFFLINE=\"${HF_HUB_OFFLINE:-1}\" TRANSFORMERS_OFFLINE=\"${TRANSFORMERS_OFFLINE:-1}\"",
           "export CUDA_VISIBLE_DEVICES=\"${CUDA_VISIBLE_DEVICES:-0}\"",
+          "MODEL_PATH=\"$(stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5\" \"$LOCAL_STAGE_ROOT/hunyuanvideo-1.5\")\"",
           "cd \"$CODE_ROOT/HunyuanVideo-1.5\"",
           "mkdir -p \"$OUTPUT_ROOT/hunyuanvideo-1.5\"",
           "export PYTORCH_CUDA_ALLOC_CONF=\"${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True,max_split_size_mb:128}\"",
-          "torchrun --nproc_per_node=\"${NPROC_PER_NODE:-1}\" generate.py --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --image_path None --resolution 480p --aspect_ratio 16:9 --seed \"${SEED:-1}\" --num_inference_steps \"${NUM_INFERENCE_STEPS:-12}\" --video_length \"${VIDEO_LENGTH:-49}\" --rewrite false --cfg_distilled false --enable_step_distill false --use_sageattn false --sparse_attn false --enable_cache true --cache_type deepcache --overlap_group_offloading false --sr false --output_path \"$OUTPUT_ROOT/hunyuanvideo-1.5/hunyuanvideo-1.5-t2v.mp4\" --model_path \"$WEIGHTS_ROOT/hunyuanvideo-1.5\""
+          "torchrun --nproc_per_node=\"${NPROC_PER_NODE:-1}\" generate.py --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --image_path None --resolution 480p --aspect_ratio 16:9 --seed \"${SEED:-1}\" --num_inference_steps \"${NUM_INFERENCE_STEPS:-12}\" --video_length \"${VIDEO_LENGTH:-49}\" --rewrite false --cfg_distilled false --enable_step_distill false --use_sageattn false --sparse_attn false --enable_cache true --cache_type deepcache --overlap_group_offloading false --sr false --output_path \"$OUTPUT_ROOT/hunyuanvideo-1.5/hunyuanvideo-1.5-t2v.mp4\" --model_path \"$MODEL_PATH\""
         ]
       },
       {
@@ -120,10 +122,11 @@
           "[ -f \"$WEIGHTS_ROOT/hunyuanvideo-1.5/vae/diffusion_pytorch_model.safetensors\" ] || { echo \"Missing VAE weights under $WEIGHTS_ROOT/hunyuanvideo-1.5/vae/diffusion_pytorch_model.safetensors\" >&2; exit 1; }",
           "export HF_HUB_OFFLINE=\"${HF_HUB_OFFLINE:-1}\" TRANSFORMERS_OFFLINE=\"${TRANSFORMERS_OFFLINE:-1}\"",
           "export CUDA_VISIBLE_DEVICES=\"${CUDA_VISIBLE_DEVICES:-0}\"",
+          "MODEL_PATH=\"$(stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5\" \"$LOCAL_STAGE_ROOT/hunyuanvideo-1.5\")\"",
           "cd \"$CODE_ROOT/HunyuanVideo-1.5\"",
           "mkdir -p \"$OUTPUT_ROOT/hunyuanvideo-1.5\"",
           "export PYTORCH_CUDA_ALLOC_CONF=\"${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True,max_split_size_mb:128}\"",
-          "torchrun --nproc_per_node=\"${NPROC_PER_NODE:-1}\" generate.py --prompt \"${PROMPT:-Summer beach vacation style, a white cat wearing sunglasses sits on a surfboard.}\" --image_path \"$INPUT_IMAGE\" --resolution 480p --aspect_ratio 16:9 --seed \"${SEED:-1}\" --num_inference_steps \"${NUM_INFERENCE_STEPS:-8}\" --video_length \"${VIDEO_LENGTH:-49}\" --rewrite false --cfg_distilled true --enable_step_distill true --use_sageattn false --sparse_attn false --enable_cache true --cache_type deepcache --overlap_group_offloading false --sr false --output_path \"$OUTPUT_ROOT/hunyuanvideo-1.5/hunyuanvideo-1.5-i2v.mp4\" --model_path \"$WEIGHTS_ROOT/hunyuanvideo-1.5\""
+          "torchrun --nproc_per_node=\"${NPROC_PER_NODE:-1}\" generate.py --prompt \"${PROMPT:-Summer beach vacation style, a white cat wearing sunglasses sits on a surfboard.}\" --image_path \"$INPUT_IMAGE\" --resolution 480p --aspect_ratio 16:9 --seed \"${SEED:-1}\" --num_inference_steps \"${NUM_INFERENCE_STEPS:-8}\" --video_length \"${VIDEO_LENGTH:-49}\" --rewrite false --cfg_distilled true --enable_step_distill true --use_sageattn false --sparse_attn false --enable_cache true --cache_type deepcache --overlap_group_offloading false --sr false --output_path \"$OUTPUT_ROOT/hunyuanvideo-1.5/hunyuanvideo-1.5-i2v.mp4\" --model_path \"$MODEL_PATH\""
         ]
       }
     ]
@@ -179,14 +182,15 @@
       "uv pip install --python .venv310/bin/python --force-reinstall torch==2.8.0 torchvision==0.23.0 --index-url https://download.pytorch.org/whl/cu128  # DPLab 570.x-compatible torch stack",
       "uv pip install -e .[flash] --no-build-isolation  # optional"
     ],
-    "notes": [
-      "The official repo uses uv already, so this is the cleanest upstream environment to reproduce on DPLab.",
-      "Install ffmpeg before trying to export videos from the CLI or Gradio UI.",
-      "CPU offload is only supported in single-GPU mode.",
-      "On DPLab's current 570.124.06 driver, the default uv resolution pulled torch 2.11.0+cu130 and failed CUDA initialization; force the cu128 torch/torchvision pair above before smoke testing.",
-      "The CLI also loads google/t5-v1_1-xxl through Hugging Face cache. Treat that text encoder as a separate heavyweight dependency and pre-populate it intentionally instead of letting the sample script fetch it implicitly.",
-      "If your environment already defines HF_TOKEN_PATH, the smoke helpers will preserve it. They no longer guess a token-file location on your behalf."
-    ],
+      "notes": [
+        "The official repo uses uv already, so this is the cleanest upstream environment to reproduce on DPLab.",
+        "Install ffmpeg before trying to export videos from the CLI or Gradio UI.",
+        "CPU offload is only supported in single-GPU mode.",
+        "On DPLab's current 570.124.06 driver, the default uv resolution pulled torch 2.11.0+cu130 and failed CUDA initialization; force the cu128 torch/torchvision pair above before smoke testing.",
+        "The CLI also loads google/t5-v1_1-xxl through Hugging Face cache. Treat that text encoder as a separate heavyweight dependency and pre-populate it intentionally instead of letting the sample script fetch it implicitly.",
+        "If your environment already defines HF_TOKEN_PATH, the smoke helpers will preserve it. They no longer guess a token-file location on your behalf.",
+        "The generated smoke helper now stages the Mochi weights plus the T5 cache subtree to node-local disk by default so offline inference does not page huge blobs from /bigtemp."
+      ],
     "download_steps": [
       "cd \"$CODE_ROOT/mochi\"",
       "python3 ./scripts/download_weights.py \"$WEIGHTS_ROOT/mochi-1-preview\"",
@@ -202,9 +206,12 @@
           "[ \"$(du -sm \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" | awk '{print $1}')\" -ge 20000 ] || { echo \"google/t5-v1_1-xxl cache under $HF_HOME looks incomplete (<20G). Populate it explicitly before running Mochi.\" >&2; exit 1; }",
           "export HF_HUB_OFFLINE=\"${HF_HUB_OFFLINE:-1}\" TRANSFORMERS_OFFLINE=\"${TRANSFORMERS_OFFLINE:-1}\"",
           "export CUDA_VISIBLE_DEVICES=\"${CUDA_VISIBLE_DEVICES:-0}\"",
+          "MODEL_DIR=\"$(stage_dir \"$WEIGHTS_ROOT/mochi-1-preview\" \"$LOCAL_STAGE_ROOT/mochi-1-preview\")\"",
+          "LOCAL_HF_HOME=\"$HF_HOME\"",
+          "if [ \"$ENABLE_LOCAL_STAGE\" = \"1\" ]; then mkdir -p \"$LOCAL_STAGE_ROOT/hf-home/hub\"; stage_dir \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" \"$LOCAL_STAGE_ROOT/hf-home/hub/models--google--t5-v1_1-xxl\" >/dev/null; LOCAL_HF_HOME=\"$LOCAL_STAGE_ROOT/hf-home\"; export HF_HOME=\"$LOCAL_HF_HOME\"; fi",
           "cd \"$CODE_ROOT/mochi\"",
           "mkdir -p \"$OUTPUT_ROOT/mochi-1\"",
-          "python3 ./demos/cli.py --model_dir \"$WEIGHTS_ROOT/mochi-1-preview\" --cpu_offload --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --seed \"${SEED:-12345}\" --out_dir \"$OUTPUT_ROOT/mochi-1\""
+          "python3 ./demos/cli.py --model_dir \"$MODEL_DIR\" --cpu_offload --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --seed \"${SEED:-12345}\" --out_dir \"$OUTPUT_ROOT/mochi-1\""
         ]
       }
     ]
