@@ -19,7 +19,7 @@
       "source .venv310/bin/activate",
       "python -m pip install --upgrade pip setuptools wheel",
       "python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128",
-      "grep -v '^flash_attn$' requirements.txt > /tmp/wan2.1.requirements.no_flash.txt",
+      "grep -Ev '^(torch|torchvision|flash_attn)([<>=].*)?$' requirements.txt > /tmp/wan2.1.requirements.no_flash.txt",
       "python -m pip install -r /tmp/wan2.1.requirements.no_flash.txt",
       "python -m pip install flash-attn --no-build-isolation  # optional acceleration path from INSTALL.md"
     ],
