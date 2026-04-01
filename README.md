@@ -117,14 +117,18 @@ repos under `--code-root`.
 
 The generated smoke-test helpers are intentionally conservative:
 
-- `sample_runs/mochi_cli.sh` now pins Mochi to single-GPU mode and refuses to
-  auto-download `google/t5-v1_1-xxl`; populate that Hugging Face cache
-  explicitly first. If your shell already defines `HF_TOKEN_PATH`, the helper
-  preserves it; otherwise it does not guess a token-file location. It also
-  defaults to offline Hub mode so an incomplete cache fails fast instead of
-  silently resuming a huge download. By default it stages the Mochi weights and
-  the `google/t5-v1_1-xxl` cache subtree to node-local `/tmp` first; set
-  `ENABLE_LOCAL_STAGE=0` if you explicitly want to run from shared storage.
+- `sample_runs/mochi_cli.sh` now defaults to a lighter smoke configuration
+  (`848x480`, `31` frames, `8` steps, fast-mode noise schedule) and uses two
+  visible GPUs by default via `CUDA_VISIBLE_DEVICES=0,1`. If you override it
+  down to a single visible GPU, the helper automatically re-enables
+  `--cpu_offload`. It still refuses to auto-download `google/t5-v1_1-xxl`;
+  populate that Hugging Face cache explicitly first. If your shell already
+  defines `HF_TOKEN_PATH`, the helper preserves it; otherwise it does not guess
+  a token-file location. It also defaults to offline Hub mode so an incomplete
+  cache fails fast instead of silently resuming a huge download. By default it
+  stages the Mochi weights and the `google/t5-v1_1-xxl` cache subtree to
+  node-local `/tmp` first; set `ENABLE_LOCAL_STAGE=0` if you explicitly want
+  to run from shared storage.
 - `sample_runs/hunyuan_i2v_step_distilled.sh` now checks for the extra text and
   vision encoders listed in `checkpoints-download.md` before launching, and it
   defaults to shorter smoke-test settings (`VIDEO_LENGTH=49`,
@@ -138,7 +142,9 @@ The generated smoke-test helpers are intentionally conservative:
   fail immediately instead of falling back to network fetches. By default they
   stage only the required Hunyuan subtrees to node-local `/tmp` before invoking
   `generate.py`; set `ENABLE_LOCAL_STAGE=0` if you explicitly want to run from
-  shared storage.
+  shared storage. The T2V helper no longer passes a literal `--image_path None`
+  string, which would otherwise make upstream `generate.py` mis-detect the run
+  as `i2v` and demand the SigLIP encoder.
 
 
 ### Detection and Source tracing model dependencies

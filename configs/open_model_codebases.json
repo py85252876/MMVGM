@@ -105,7 +105,7 @@
           "cd \"$CODE_ROOT/HunyuanVideo-1.5\"",
           "mkdir -p \"$OUTPUT_ROOT/hunyuanvideo-1.5\"",
           "export PYTORCH_CUDA_ALLOC_CONF=\"${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True,max_split_size_mb:128}\"",
-          "torchrun --nproc_per_node=\"${NPROC_PER_NODE:-1}\" generate.py --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --image_path None --resolution 480p --aspect_ratio 16:9 --seed \"${SEED:-1}\" --num_inference_steps \"${NUM_INFERENCE_STEPS:-12}\" --video_length \"${VIDEO_LENGTH:-49}\" --rewrite false --cfg_distilled false --enable_step_distill false --use_sageattn false --sparse_attn false --enable_cache true --cache_type deepcache --overlap_group_offloading false --sr false --output_path \"$OUTPUT_ROOT/hunyuanvideo-1.5/hunyuanvideo-1.5-t2v.mp4\" --model_path \"$MODEL_PATH\""
+          "torchrun --nproc_per_node=\"${NPROC_PER_NODE:-1}\" generate.py --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --resolution 480p --aspect_ratio 16:9 --seed \"${SEED:-1}\" --num_inference_steps \"${NUM_INFERENCE_STEPS:-12}\" --video_length \"${VIDEO_LENGTH:-49}\" --rewrite false --cfg_distilled false --enable_step_distill false --use_sageattn false --sparse_attn false --enable_cache true --cache_type deepcache --overlap_group_offloading false --sr false --output_path \"$OUTPUT_ROOT/hunyuanvideo-1.5/hunyuanvideo-1.5-t2v.mp4\" --model_path \"$MODEL_PATH\""
         ]
       },
       {
@@ -207,13 +207,19 @@
           "! find \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" -name \"*.incomplete\" -print -quit | grep -q . || { echo \"Found incomplete google/t5-v1_1-xxl downloads under $HF_HOME. Finish or clean them before running Mochi.\" >&2; exit 1; }",
           "[ \"$(du -sm \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" | awk '{print $1}')\" -ge 20000 ] || { echo \"google/t5-v1_1-xxl cache under $HF_HOME looks incomplete (<20G). Populate it explicitly before running Mochi.\" >&2; exit 1; }",
           "export HF_HUB_OFFLINE=\"${HF_HUB_OFFLINE:-1}\" TRANSFORMERS_OFFLINE=\"${TRANSFORMERS_OFFLINE:-1}\"",
-          "export CUDA_VISIBLE_DEVICES=\"${CUDA_VISIBLE_DEVICES:-0}\"",
+          "export CUDA_VISIBLE_DEVICES=\"${CUDA_VISIBLE_DEVICES:-0,1}\"",
           "MODEL_DIR=\"$(stage_dir \"$WEIGHTS_ROOT/mochi-1-preview\" \"$LOCAL_STAGE_ROOT/mochi-1-preview\")\"",
           "LOCAL_HF_HOME=\"$HF_HOME\"",
           "if [ \"$ENABLE_LOCAL_STAGE\" = \"1\" ]; then mkdir -p \"$LOCAL_STAGE_ROOT/hf-home/hub\"; stage_dir \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" \"$LOCAL_STAGE_ROOT/hf-home/hub/models--google--t5-v1_1-xxl\" >/dev/null; LOCAL_HF_HOME=\"$LOCAL_STAGE_ROOT/hf-home\"; export HF_HOME=\"$LOCAL_HF_HOME\"; fi",
           "cd \"$CODE_ROOT/mochi\"",
           "mkdir -p \"$OUTPUT_ROOT/mochi-1\"",
-          "python3 ./demos/cli.py --model_dir \"$MODEL_DIR\" --cpu_offload --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --seed \"${SEED:-12345}\" --out_dir \"$OUTPUT_ROOT/mochi-1\""
+          "VISIBLE_GPU_COUNT=\"$(printf '%s' \"$CUDA_VISIBLE_DEVICES\" | awk -F, '{print NF}')\"",
+          "MOCHI_CPU_OFFLOAD=\"${MOCHI_CPU_OFFLOAD:-auto}\"",
+          "MOCHI_LINEAR_STEPS=\"${MOCHI_LINEAR_STEPS:-6}\"",
+          "CLI_ARGS=(python3 ./demos/cli.py --model_dir \"$MODEL_DIR\" --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --seed \"${SEED:-12345}\" --out_dir \"$OUTPUT_ROOT/mochi-1\" --width \"${MOCHI_WIDTH:-848}\" --height \"${MOCHI_HEIGHT:-480}\" --num_frames \"${MOCHI_NUM_FRAMES:-31}\" --num_steps \"${MOCHI_NUM_STEPS:-8}\" --cfg_scale \"${MOCHI_CFG_SCALE:-1.5}\" --threshold-noise \"${MOCHI_THRESHOLD_NOISE:-0.1}\")",
+          "[ -n \"$MOCHI_LINEAR_STEPS\" ] && CLI_ARGS+=(--linear-steps \"$MOCHI_LINEAR_STEPS\")",
+          "if [ \"$VISIBLE_GPU_COUNT\" -le 1 ] && [ \"$MOCHI_CPU_OFFLOAD\" != \"0\" ]; then CLI_ARGS+=(--cpu_offload); fi",
+          "\"${CLI_ARGS[@]}\""
         ]
       }
     ]
