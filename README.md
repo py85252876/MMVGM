@@ -117,34 +117,42 @@ repos under `--code-root`.
 
 The generated smoke-test helpers are intentionally conservative:
 
+- `sample_runs/wan_t2v_1_3b.sh` is now the practical first smoke test on DPLab
+  GPUs. It targets `Wan2.1-T2V-1.3B` at `832x480` with `--offload_model True`
+  and `--t5_cpu`, which matches the official single-GPU recommendation for the
+  smaller Wan checkpoint. The generated `Wan2.1` checklist also preinstalls
+  `torch` before the rest of the requirements and leaves `flash-attn` as an
+  optional post-step, because the upstream code falls back to PyTorch SDPA.
 - `sample_runs/mochi_cli.sh` now defaults to a lighter smoke configuration
-  (`848x480`, `31` frames, `8` steps, fast-mode noise schedule) and uses two
-  visible GPUs by default via `CUDA_VISIBLE_DEVICES=0,1`. If you override it
-  down to a single visible GPU, the helper automatically re-enables
-  `--cpu_offload`. It still refuses to auto-download `google/t5-v1_1-xxl`;
-  populate that Hugging Face cache explicitly first. If your shell already
-  defines `HF_TOKEN_PATH`, the helper preserves it; otherwise it does not guess
-  a token-file location. It also defaults to offline Hub mode so an incomplete
-  cache fails fast instead of silently resuming a huge download. By default it
-  stages the Mochi weights and the `google/t5-v1_1-xxl` cache subtree to
-  node-local `/tmp` first; set `ENABLE_LOCAL_STAGE=0` if you explicitly want
-  to run from shared storage.
+  (`848x480`, `31` frames, `8` steps, fast-mode noise schedule), but it now
+  defaults to a single visible GPU and fails fast on cards below roughly
+  `60 GB` VRAM instead of spending minutes loading weights only to OOM. If you
+  want to try the official multi-GPU Ray path anyway, override
+  `CUDA_VISIBLE_DEVICES` explicitly. It still refuses to auto-download
+  `google/t5-v1_1-xxl`; populate that Hugging Face cache explicitly first. If
+  your shell already defines `HF_TOKEN_PATH`, the helper preserves it;
+  otherwise it does not guess a token-file location. It also defaults to
+  offline Hub mode so an incomplete cache fails fast instead of silently
+  resuming a huge download. By default it stages the Mochi weights and the
+  `google/t5-v1_1-xxl` cache subtree to node-local `/tmp` first; set
+  `ENABLE_LOCAL_STAGE=0` if you explicitly want to run from shared storage.
 - `sample_runs/hunyuan_i2v_step_distilled.sh` now checks for the extra text and
   vision encoders listed in `checkpoints-download.md` before launching, and it
   defaults to shorter smoke-test settings (`VIDEO_LENGTH=49`,
   `NUM_INFERENCE_STEPS=8`) unless you override them.
-- `sample_runs/hunyuan_t2v_480p.sh` is the fallback when `FLUX.1-Redux-dev`
-  access is not approved yet; only the `I2V` path needs the gated `SigLIP`
-  vision encoder. It now also verifies the local `scheduler/`, `vae/`, and
-  `transformer/480p_t2v/` checkpoint layout before starting, and defaults to
-  `VIDEO_LENGTH=49` with `NUM_INFERENCE_STEPS=12` for a quicker smoke test. The
-  Hunyuan smoke helpers also default to offline Hub mode so missing local files
-  fail immediately instead of falling back to network fetches. By default they
-  stage only the required Hunyuan subtrees to node-local `/tmp` before invoking
+- `sample_runs/hunyuan_t2v_480p.sh` is no longer documented as a `SigLIP`-free
+  fallback. The current upstream `HunyuanVideo-1.5` pipeline unconditionally
+  loads `vision_encoder/siglip`, so both the `T2V` and `I2V` smoke helpers now
+  require the gated `FLUX.1-Redux-dev` access path to be approved first. The
+  T2V helper still verifies the local `scheduler/`, `vae/`,
+  `vision_encoder/siglip`, and `transformer/480p_t2v/` checkpoint layout
+  before starting, and defaults to `VIDEO_LENGTH=49` with
+  `NUM_INFERENCE_STEPS=12` for a quicker smoke test. The Hunyuan smoke helpers
+  also default to offline Hub mode so missing local files fail immediately
+  instead of falling back to network fetches. By default they stage only the
+  required Hunyuan subtrees to node-local `/tmp` before invoking
   `generate.py`; set `ENABLE_LOCAL_STAGE=0` if you explicitly want to run from
-  shared storage. The T2V helper no longer passes a literal `--image_path None`
-  string, which would otherwise make upstream `generate.py` mis-detect the run
-  as `i2v` and demand the SigLIP encoder.
+  shared storage.
 
 
 ### Detection and Source tracing model dependencies

@@ -15,18 +15,37 @@
       "wan2.1-t2v-1.3b"
     ],
     "install_steps": [
-      "pip install -r requirements.txt"
+      "python3.10 -m venv .venv310",
+      "source .venv310/bin/activate",
+      "python -m pip install --upgrade pip setuptools wheel",
+      "python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128",
+      "grep -v '^flash_attn$' requirements.txt > /tmp/wan2.1.requirements.no_flash.txt",
+      "python -m pip install -r /tmp/wan2.1.requirements.no_flash.txt",
+      "python -m pip install flash-attn --no-build-isolation  # optional acceleration path from INSTALL.md"
     ],
     "notes": [
       "Official README requires torch >= 2.4.0.",
       "Use --offload_model True and --t5_cpu when memory is tight on single-GPU hosts.",
-      "The same codebase covers both the T2V and I2V checkpoints."
+      "The same codebase covers both the T2V and I2V checkpoints.",
+      "On DPLab-class 24-49 GB GPUs, Wan2.1 T2V-1.3B is the practical first smoke-test target.",
+      "The repo falls back to PyTorch SDPA when flash-attn is absent, so flash-attn can stay optional for first-pass smoke tests.",
+      "If you do want flash-attn, INSTALL.md recommends installing it separately with --no-build-isolation after torch is already present."
     ],
     "download_steps": [
+      "huggingface-cli download Wan-AI/Wan2.1-T2V-1.3B --local-dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-1.3B\"",
       "huggingface-cli download Wan-AI/Wan2.1-T2V-14B --local-dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-14B\"",
       "huggingface-cli download Wan-AI/Wan2.1-I2V-14B-720P --local-dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-I2V-14B-720P\""
     ],
     "sample_scripts": [
+      {
+        "filename": "wan_t2v_1_3b.sh",
+        "title": "Wan2.1 T2V 1.3B smoke test",
+        "commands": [
+          "cd \"$CODE_ROOT/Wan2.1\"",
+          "mkdir -p \"$OUTPUT_ROOT/wan2.1\"",
+          "python generate.py --task t2v-1.3B --size 832*480 --ckpt_dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-1.3B\" --offload_model True --t5_cpu --sample_shift \"${WAN_SAMPLE_SHIFT:-8}\" --sample_guide_scale \"${WAN_SAMPLE_GUIDE_SCALE:-6}\" --prompt \"${PROMPT:-Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.}\" --save_file \"$OUTPUT_ROOT/wan2.1/wan2.1-t2v-1.3b.mp4\""
+        ]
+      },
       {
         "filename": "wan_t2v_14b.sh",
         "title": "Wan2.1 T2V 14B smoke test",
@@ -57,7 +76,7 @@
     "setup_reference": "https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5#-dependencies-and-installation",
     "python_version": "Python 3.10+",
     "venv_dir": ".venv310",
-    "recommended": true,
+    "recommended": false,
     "models_supported": [
       "hunyuanvideo-1.5-480p-i2v-step-distilled",
       "hunyuanvideo-1.5-480p-t2v"
@@ -69,15 +88,15 @@
       "uv pip install --python .venv310/bin/python -i https://mirrors.tencent.com/pypi/simple/ --upgrade tencentcloud-sdk-python"
     ],
       "notes": [
-        "Official source-code inference supports both T2V and I2V through generate.py.",
-        "Use --rewrite false if you do not have a vLLM-compatible prompt rewrite service.",
-        "For the 480p step-distilled I2V checkpoint, the upstream README recommends 8 or 12 steps.",
-        "The upstream checkpoints-download guide also requires Qwen2.5-VL-7B-Instruct, google/byt5-small, Glyph-SDXL-v2, and a gated SigLIP encoder from FLUX.1-Redux-dev.",
-        "On DPLab's current 570.124.06 driver, the torch/torchvision/torchaudio 2.6.0 trio resolves cleanly via the cu126 index.",
-        "If FLUX.1-Redux-dev access is not approved yet, use the T2V smoke test first; only the I2V path needs the SigLIP vision encoder.",
-        "For smoke tests, make sure the local checkpoint layout includes root config.json plus scheduler/, vae/, and the target transformer/* subtree before launching generate.py.",
-        "The generated smoke helpers now stage the Hunyuan checkpoint tree to node-local disk by default so first-run inference does not stream the large transformer shards directly from /bigtemp."
-      ],
+      "Official source-code inference supports both T2V and I2V through generate.py.",
+      "Use --rewrite false if you do not have a vLLM-compatible prompt rewrite service.",
+      "For the 480p step-distilled I2V checkpoint, the upstream README recommends 8 or 12 steps.",
+      "The upstream checkpoints-download guide also requires Qwen2.5-VL-7B-Instruct, google/byt5-small, Glyph-SDXL-v2, and a gated SigLIP encoder from FLUX.1-Redux-dev.",
+      "On DPLab's current 570.124.06 driver, the torch/torchvision/torchaudio 2.6.0 trio resolves cleanly via the cu126 index.",
+      "The current upstream pipeline unconditionally loads the SigLIP vision encoder, so both T2V and I2V are blocked until FLUX.1-Redux-dev access is approved.",
+      "For smoke tests, make sure the local checkpoint layout includes root config.json plus scheduler/, vae/, and the target transformer/* subtree before launching generate.py.",
+      "The generated smoke helpers now stage the Hunyuan checkpoint tree to node-local disk by default so first-run inference does not stream the large transformer shards directly from /bigtemp."
+    ],
     "download_steps": [
       "huggingface-cli download tencent/HunyuanVideo-1.5 --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5\"",
       "huggingface-cli download Qwen/Qwen2.5-VL-7B-Instruct --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\"",
@@ -93,6 +112,7 @@
           "[ -d \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\" ] || { echo \"Missing Qwen2.5-VL-7B-Instruct under $WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\" >&2; exit 1; }",
           "[ -d \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/byt5-small\" ] || { echo \"Missing google/byt5-small under $WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/byt5-small\" >&2; exit 1; }",
           "[ -d \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/Glyph-SDXL-v2\" ] || { echo \"Missing Glyph-SDXL-v2 under $WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/Glyph-SDXL-v2\" >&2; exit 1; }",
+          "[ -d \"$WEIGHTS_ROOT/hunyuanvideo-1.5/vision_encoder/siglip\" ] || { echo \"Missing SigLIP encoder under $WEIGHTS_ROOT/hunyuanvideo-1.5/vision_encoder/siglip\" >&2; exit 1; }",
           "[ -f \"$WEIGHTS_ROOT/hunyuanvideo-1.5/config.json\" ] || { echo \"Missing Hunyuan root config under $WEIGHTS_ROOT/hunyuanvideo-1.5/config.json\" >&2; exit 1; }",
           "[ -f \"$WEIGHTS_ROOT/hunyuanvideo-1.5/scheduler/scheduler_config.json\" ] || { echo \"Missing scheduler_config.json under $WEIGHTS_ROOT/hunyuanvideo-1.5/scheduler\" >&2; exit 1; }",
           "[ -f \"$WEIGHTS_ROOT/hunyuanvideo-1.5/vae/config.json\" ] || { echo \"Missing VAE config under $WEIGHTS_ROOT/hunyuanvideo-1.5/vae/config.json\" >&2; exit 1; }",
@@ -101,7 +121,7 @@
           "export HF_HUB_OFFLINE=\"${HF_HUB_OFFLINE:-1}\" TRANSFORMERS_OFFLINE=\"${TRANSFORMERS_OFFLINE:-1}\"",
           "export CUDA_VISIBLE_DEVICES=\"${CUDA_VISIBLE_DEVICES:-0}\"",
           "MODEL_PATH=\"$WEIGHTS_ROOT/hunyuanvideo-1.5\"",
-          "if [ \"$ENABLE_LOCAL_STAGE\" = \"1\" ]; then LOCAL_MODEL_ROOT=\"$LOCAL_STAGE_ROOT/hunyuanvideo-1.5\"; mkdir -p \"$LOCAL_MODEL_ROOT/text_encoder\" \"$LOCAL_MODEL_ROOT/transformer\"; stage_file \"$WEIGHTS_ROOT/hunyuanvideo-1.5/config.json\" \"$LOCAL_MODEL_ROOT/config.json\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/assets\" \"$LOCAL_MODEL_ROOT/assets\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/scheduler\" \"$LOCAL_MODEL_ROOT/scheduler\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/vae\" \"$LOCAL_MODEL_ROOT/vae\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\" \"$LOCAL_MODEL_ROOT/text_encoder/llm\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/byt5-small\" \"$LOCAL_MODEL_ROOT/text_encoder/byt5-small\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/Glyph-SDXL-v2\" \"$LOCAL_MODEL_ROOT/text_encoder/Glyph-SDXL-v2\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/transformer/480p_t2v\" \"$LOCAL_MODEL_ROOT/transformer/480p_t2v\" >/dev/null; MODEL_PATH=\"$LOCAL_MODEL_ROOT\"; fi",
+          "if [ \"$ENABLE_LOCAL_STAGE\" = \"1\" ]; then LOCAL_MODEL_ROOT=\"$LOCAL_STAGE_ROOT/hunyuanvideo-1.5\"; mkdir -p \"$LOCAL_MODEL_ROOT/text_encoder\" \"$LOCAL_MODEL_ROOT/transformer\" \"$LOCAL_MODEL_ROOT/vision_encoder\"; stage_file \"$WEIGHTS_ROOT/hunyuanvideo-1.5/config.json\" \"$LOCAL_MODEL_ROOT/config.json\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/assets\" \"$LOCAL_MODEL_ROOT/assets\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/scheduler\" \"$LOCAL_MODEL_ROOT/scheduler\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/vae\" \"$LOCAL_MODEL_ROOT/vae\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\" \"$LOCAL_MODEL_ROOT/text_encoder/llm\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/byt5-small\" \"$LOCAL_MODEL_ROOT/text_encoder/byt5-small\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/Glyph-SDXL-v2\" \"$LOCAL_MODEL_ROOT/text_encoder/Glyph-SDXL-v2\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/vision_encoder/siglip\" \"$LOCAL_MODEL_ROOT/vision_encoder/siglip\" >/dev/null; stage_dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/transformer/480p_t2v\" \"$LOCAL_MODEL_ROOT/transformer/480p_t2v\" >/dev/null; MODEL_PATH=\"$LOCAL_MODEL_ROOT\"; fi",
           "cd \"$CODE_ROOT/HunyuanVideo-1.5\"",
           "mkdir -p \"$OUTPUT_ROOT/hunyuanvideo-1.5\"",
           "export PYTORCH_CUDA_ALLOC_CONF=\"${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True,max_split_size_mb:128}\"",
@@ -171,7 +191,7 @@
     "setup_reference": "https://github.com/genmoai/mochi#installation",
     "python_version": "Python 3.10+",
     "venv_dir": ".venv310",
-    "recommended": true,
+    "recommended": false,
     "models_supported": [
       "mochi-1-preview"
     ],
@@ -191,7 +211,8 @@
         "On DPLab's current 570.124.06 driver, the default uv resolution pulled torch 2.11.0+cu130 and failed CUDA initialization; force the cu128 torch/torchvision pair above before smoke testing.",
         "The CLI also loads google/t5-v1_1-xxl through Hugging Face cache. Treat that text encoder as a separate heavyweight dependency and pre-populate it intentionally instead of letting the sample script fetch it implicitly.",
         "If your environment already defines HF_TOKEN_PATH, the smoke helpers will preserve it. They no longer guess a token-file location on your behalf.",
-        "The generated smoke helper now stages the Mochi weights plus the T5 cache subtree to node-local disk by default so offline inference does not page huge blobs from /bigtemp."
+        "The generated smoke helper now stages the Mochi weights plus the T5 cache subtree to node-local disk by default so offline inference does not page huge blobs from /bigtemp.",
+        "The official repo documents roughly 60 GB single-GPU VRAM for this harness. On DPLab 49 GB cards, the official CLI still OOMs at 848x480 / 31 frames / 8 steps, so treat Mochi as a multi-GPU or H100-class target unless you switch to a different inference wrapper."
       ],
     "download_steps": [
       "cd \"$CODE_ROOT/mochi\"",
@@ -207,13 +228,14 @@
           "! find \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" -name \"*.incomplete\" -print -quit | grep -q . || { echo \"Found incomplete google/t5-v1_1-xxl downloads under $HF_HOME. Finish or clean them before running Mochi.\" >&2; exit 1; }",
           "[ \"$(du -sm \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" | awk '{print $1}')\" -ge 20000 ] || { echo \"google/t5-v1_1-xxl cache under $HF_HOME looks incomplete (<20G). Populate it explicitly before running Mochi.\" >&2; exit 1; }",
           "export HF_HUB_OFFLINE=\"${HF_HUB_OFFLINE:-1}\" TRANSFORMERS_OFFLINE=\"${TRANSFORMERS_OFFLINE:-1}\"",
-          "export CUDA_VISIBLE_DEVICES=\"${CUDA_VISIBLE_DEVICES:-0,1}\"",
+          "export CUDA_VISIBLE_DEVICES=\"${CUDA_VISIBLE_DEVICES:-0}\"",
           "MODEL_DIR=\"$(stage_dir \"$WEIGHTS_ROOT/mochi-1-preview\" \"$LOCAL_STAGE_ROOT/mochi-1-preview\")\"",
           "LOCAL_HF_HOME=\"$HF_HOME\"",
           "if [ \"$ENABLE_LOCAL_STAGE\" = \"1\" ]; then mkdir -p \"$LOCAL_STAGE_ROOT/hf-home/hub\"; stage_dir \"$HF_HOME/hub/models--google--t5-v1_1-xxl\" \"$LOCAL_STAGE_ROOT/hf-home/hub/models--google--t5-v1_1-xxl\" >/dev/null; LOCAL_HF_HOME=\"$LOCAL_STAGE_ROOT/hf-home\"; export HF_HOME=\"$LOCAL_HF_HOME\"; fi",
           "cd \"$CODE_ROOT/mochi\"",
           "mkdir -p \"$OUTPUT_ROOT/mochi-1\"",
           "VISIBLE_GPU_COUNT=\"$(printf '%s' \"$CUDA_VISIBLE_DEVICES\" | awk -F, '{print NF}')\"",
+          "if [ \"$VISIBLE_GPU_COUNT\" -le 1 ]; then SINGLE_GPU_MEM_MIB=\"$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits | head -n 1 | tr -d ' ')\"; [ -n \"$SINGLE_GPU_MEM_MIB\" ] || SINGLE_GPU_MEM_MIB=0; if [ \"$SINGLE_GPU_MEM_MIB\" -lt 60000 ]; then echo \"Mochi's official CLI needs roughly 60 GB VRAM in single-GPU mode; visible GPU only reports ${SINGLE_GPU_MEM_MIB} MiB. Override CUDA_VISIBLE_DEVICES to a tested multi-GPU setup or use Wan2.1 T2V-1.3B for first-pass smoke tests on DPLab.\" >&2; exit 1; fi; fi",
           "MOCHI_CPU_OFFLOAD=\"${MOCHI_CPU_OFFLOAD:-auto}\"",
           "MOCHI_LINEAR_STEPS=\"${MOCHI_LINEAR_STEPS:-6}\"",
           "CLI_ARGS=(python3 ./demos/cli.py --model_dir \"$MODEL_DIR\" --prompt \"${PROMPT:-A cinematic close-up of a lemon tart on a wooden table, shot with soft natural light.}\" --seed \"${SEED:-12345}\" --out_dir \"$OUTPUT_ROOT/mochi-1\" --width \"${MOCHI_WIDTH:-848}\" --height \"${MOCHI_HEIGHT:-480}\" --num_frames \"${MOCHI_NUM_FRAMES:-31}\" --num_steps \"${MOCHI_NUM_STEPS:-8}\" --cfg_scale \"${MOCHI_CFG_SCALE:-1.5}\" --threshold-noise \"${MOCHI_THRESHOLD_NOISE:-0.1}\")",

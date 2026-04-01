@@ -48,7 +48,7 @@
     "mmvgm_priority": 3,
     "repo_url": "https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5",
     "weights_url": "https://huggingface.co/tencent/HunyuanVideo-1.5/tree/main/transformer/480p_i2v_step_distilled",
-    "notes": "Fast, strong image-to-video checkpoint with community-style licensing."
+    "notes": "Fast, strong image-to-video checkpoint with community-style licensing, but the current upstream pipeline still depends on the gated SigLIP encoder from FLUX.1-Redux-dev."
   },
   {
     "slug": "open-sora-v2",
@@ -73,8 +73,8 @@
     "family": "Mochi",
     "tasks": ["t2v"],
     "weights_license": "apache-2.0",
-    "min_vram_gb": 22.0,
-    "max_quality_vram_gb": 42.0,
+    "min_vram_gb": 60.0,
+    "max_quality_vram_gb": null,
     "parameter_count_b": null,
     "quality_tier": "flagship",
     "source_tracing_default": true,
@@ -82,7 +82,7 @@
     "mmvgm_priority": 5,
     "repo_url": "https://github.com/genmoai/mochi",
     "weights_url": "https://huggingface.co/genmo/mochi-1-preview",
-    "notes": "High-quality text-to-video model with a low-memory mode and Apache-2.0 weights."
+    "notes": "High-quality text-to-video model with Apache-2.0 weights, but the official repo harness still wants about 60 GB single-GPU VRAM; lower-VRAM claims usually refer to alternative wrappers."
   },
   {
     "slug": "hunyuanvideo-1.5-480p-t2v",
@@ -99,7 +99,7 @@
     "mmvgm_priority": 6,
     "repo_url": "https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5",
     "weights_url": "https://huggingface.co/tencent/HunyuanVideo-1.5/tree/main/transformer/480p_t2v",
-    "notes": "Balanced text-to-video option when you want Hunyuan without the larger 720P variants."
+    "notes": "Balanced text-to-video option when you want Hunyuan without the larger 720P variants, but the current upstream pipeline still loads the gated SigLIP encoder even for T2V."
   },
   {
     "slug": "cogvideox1.5-5b-i2v",
