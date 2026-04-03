@@ -32,9 +32,9 @@
       "If you do want flash-attn, INSTALL.md recommends installing it separately with --no-build-isolation after torch is already present."
     ],
     "download_steps": [
-      "huggingface-cli download Wan-AI/Wan2.1-T2V-1.3B --local-dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-1.3B\"",
-      "huggingface-cli download Wan-AI/Wan2.1-T2V-14B --local-dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-14B\"",
-      "huggingface-cli download Wan-AI/Wan2.1-I2V-14B-720P --local-dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-I2V-14B-720P\""
+      "hf download Wan-AI/Wan2.1-T2V-1.3B --local-dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-1.3B\"",
+      "hf download Wan-AI/Wan2.1-T2V-14B --local-dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-14B\"",
+      "hf download Wan-AI/Wan2.1-I2V-14B-720P --local-dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-I2V-14B-720P\""
     ],
     "sample_scripts": [
       {
@@ -98,9 +98,9 @@
       "The generated smoke helpers now stage the Hunyuan checkpoint tree to node-local disk by default so first-run inference does not stream the large transformer shards directly from /bigtemp."
     ],
     "download_steps": [
-      "huggingface-cli download tencent/HunyuanVideo-1.5 --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5\"",
-      "huggingface-cli download Qwen/Qwen2.5-VL-7B-Instruct --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\"",
-      "huggingface-cli download google/byt5-small --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/byt5-small\"",
+      "hf download tencent/HunyuanVideo-1.5 --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5\"",
+      "hf download Qwen/Qwen2.5-VL-7B-Instruct --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/llm\"",
+      "hf download google/byt5-small --local-dir \"$WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/byt5-small\"",
       "echo \"Download Glyph-SDXL-v2 from ModelScope into $WEIGHTS_ROOT/hunyuanvideo-1.5/text_encoder/Glyph-SDXL-v2 before running the Hunyuan smoke test.\"",
       "echo \"Request FLUX.1-Redux-dev access, then download the SigLIP encoder into $WEIGHTS_ROOT/hunyuanvideo-1.5/vision_encoder/siglip before running the Hunyuan smoke test.\""
     ],
@@ -177,7 +177,7 @@
       "This is the heaviest setup in the shortlist, so it stays as a research baseline rather than a first smoke test."
     ],
     "download_steps": [
-      "huggingface-cli download hpcai-tech/Open-Sora-v2 --local-dir \"$WEIGHTS_ROOT/open-sora-v2/hf\"",
+      "hf download hpcai-tech/Open-Sora-v2 --local-dir \"$WEIGHTS_ROOT/open-sora-v2/hf\"",
       "echo \"Copy or symlink the required checkpoint files into $CODE_ROOT/Open-Sora/ckpts to match configs/diffusion/inference/*.py\""
     ],
     "sample_scripts": []
@@ -269,7 +269,7 @@
       "For first-pass MMVGM integration, treat this as a low-friction fallback rather than the primary benchmark family."
     ],
     "download_steps": [
-      "huggingface-cli download THUDM/CogVideoX1.5-5B-I2V --local-dir \"$WEIGHTS_ROOT/cogvideox1.5-5b-i2v\""
+      "hf download THUDM/CogVideoX1.5-5B-I2V --local-dir \"$WEIGHTS_ROOT/cogvideox1.5-5b-i2v\""
     ],
     "sample_scripts": []
   }
