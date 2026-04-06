@@ -19,6 +19,7 @@
       "source .venv310/bin/activate",
       "python -m pip install --upgrade pip setuptools wheel",
       "python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128",
+      "python -m pip install einops",
       "grep -Ev '^(torch|torchvision|flash_attn)([<>=].*)?$' requirements.txt > /tmp/wan2.1.requirements.no_flash.txt",
       "python -m pip install -r /tmp/wan2.1.requirements.no_flash.txt",
       "python -m pip install flash-attn --no-build-isolation  # optional acceleration path from INSTALL.md"
@@ -29,6 +30,7 @@
       "The same codebase covers both the T2V and I2V checkpoints.",
       "On DPLab-class 24-49 GB GPUs, Wan2.1 T2V-1.3B is the practical first smoke-test target.",
       "The repo falls back to PyTorch SDPA when flash-attn is absent, so flash-attn can stay optional for first-pass smoke tests.",
+      "The current upstream requirements miss einops even though wan/modules/vae.py imports it, so install einops explicitly during bootstrap.",
       "If you do want flash-attn, INSTALL.md recommends installing it separately with --no-build-isolation after torch is already present."
     ],
     "download_steps": [
