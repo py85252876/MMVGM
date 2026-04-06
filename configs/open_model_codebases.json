@@ -29,7 +29,7 @@
       "Use --offload_model True and --t5_cpu when memory is tight on single-GPU hosts.",
       "The same codebase covers both the T2V and I2V checkpoints.",
       "On DPLab-class 24-49 GB GPUs, Wan2.1 T2V-1.3B is the practical first smoke-test target.",
-      "The current upstream T2V path imports flash_attention directly in wan/modules/model.py, so flash-attn is not truly optional unless you patch that file to call the existing attention() wrapper.",
+      "The current upstream T2V path imports flash_attention directly in wan/modules/model.py, so flash-attn is not truly optional unless you patch that file to call the existing attention() wrapper. The generated helper now defaults to applying scripts/apply_wan_attention_fallback.py before launch.",
       "The current upstream requirements miss einops even though wan/modules/vae.py imports it, so install einops explicitly during bootstrap.",
       "If you do want flash-attn, INSTALL.md recommends installing it separately with --no-build-isolation after torch is already present, but DPLab nodes also need a CUDA toolkit with nvcc visible via CUDA_HOME."
     ],
@@ -44,8 +44,11 @@
         "title": "Wan2.1 T2V 1.3B smoke test",
         "commands": [
           "cd \"$CODE_ROOT/Wan2.1\"",
+          "if [ \"${WAN_APPLY_FLASH_ATTENTION_FALLBACK:-1}\" = \"1\" ]; then python \"$MMVGM_ROOT/scripts/apply_wan_attention_fallback.py\" --repo-root \"$CODE_ROOT/Wan2.1\"; fi",
           "mkdir -p \"$OUTPUT_ROOT/wan2.1\"",
-          "python generate.py --task t2v-1.3B --size 832*480 --ckpt_dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-1.3B\" --offload_model True --t5_cpu --sample_shift \"${WAN_SAMPLE_SHIFT:-8}\" --sample_guide_scale \"${WAN_SAMPLE_GUIDE_SCALE:-6}\" --prompt \"${PROMPT:-Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.}\" --save_file \"$OUTPUT_ROOT/wan2.1/wan2.1-t2v-1.3b.mp4\""
+          "OUTPUT_FILE=\"${OUTPUT_FILE:-$OUTPUT_ROOT/wan2.1/wan2.1-t2v-1.3b.mp4}\"",
+          "mkdir -p \"$(dirname \"$OUTPUT_FILE\")\"",
+          "python generate.py --task t2v-1.3B --size 832*480 --ckpt_dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-1.3B\" --offload_model True --t5_cpu --sample_shift \"${WAN_SAMPLE_SHIFT:-8}\" --sample_guide_scale \"${WAN_SAMPLE_GUIDE_SCALE:-6}\" --prompt \"${PROMPT:-Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.}\" --save_file \"$OUTPUT_FILE\""
         ]
       },
       {
@@ -53,8 +56,11 @@
         "title": "Wan2.1 T2V 14B smoke test",
         "commands": [
           "cd \"$CODE_ROOT/Wan2.1\"",
+          "if [ \"${WAN_APPLY_FLASH_ATTENTION_FALLBACK:-1}\" = \"1\" ]; then python \"$MMVGM_ROOT/scripts/apply_wan_attention_fallback.py\" --repo-root \"$CODE_ROOT/Wan2.1\"; fi",
           "mkdir -p \"$OUTPUT_ROOT/wan2.1\"",
-          "python generate.py --task t2v-14B --size 1280*720 --ckpt_dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-14B\" --offload_model True --prompt \"${PROMPT:-Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.}\" --save_file \"$OUTPUT_ROOT/wan2.1/wan2.1-t2v-14b.mp4\""
+          "OUTPUT_FILE=\"${OUTPUT_FILE:-$OUTPUT_ROOT/wan2.1/wan2.1-t2v-14b.mp4}\"",
+          "mkdir -p \"$(dirname \"$OUTPUT_FILE\")\"",
+          "python generate.py --task t2v-14B --size 1280*720 --ckpt_dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-T2V-14B\" --offload_model True --prompt \"${PROMPT:-Two anthropomorphic cats in comfy boxing gear and bright gloves fight intensely on a spotlighted stage.}\" --save_file \"$OUTPUT_FILE\""
         ]
       },
       {
@@ -63,8 +69,11 @@
         "commands": [
           "[ -n \"${INPUT_IMAGE:-}\" ] || { echo \"Set INPUT_IMAGE=/path/to/input.jpg before running.\" >&2; exit 1; }",
           "cd \"$CODE_ROOT/Wan2.1\"",
+          "if [ \"${WAN_APPLY_FLASH_ATTENTION_FALLBACK:-1}\" = \"1\" ]; then python \"$MMVGM_ROOT/scripts/apply_wan_attention_fallback.py\" --repo-root \"$CODE_ROOT/Wan2.1\"; fi",
           "mkdir -p \"$OUTPUT_ROOT/wan2.1\"",
-          "python generate.py --task i2v-14B --size 1280*720 --ckpt_dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-I2V-14B-720P\" --image \"$INPUT_IMAGE\" --offload_model True --prompt \"${PROMPT:-Summer beach vacation style, a white cat wearing sunglasses sits on a surfboard.}\" --save_file \"$OUTPUT_ROOT/wan2.1/wan2.1-i2v-14b-720p.mp4\""
+          "OUTPUT_FILE=\"${OUTPUT_FILE:-$OUTPUT_ROOT/wan2.1/wan2.1-i2v-14b-720p.mp4}\"",
+          "mkdir -p \"$(dirname \"$OUTPUT_FILE\")\"",
+          "python generate.py --task i2v-14B --size 1280*720 --ckpt_dir \"$WEIGHTS_ROOT/wan2.1/Wan2.1-I2V-14B-720P\" --image \"$INPUT_IMAGE\" --offload_model True --prompt \"${PROMPT:-Summer beach vacation style, a white cat wearing sunglasses sits on a surfboard.}\" --save_file \"$OUTPUT_FILE\""
         ]
       }
     ]

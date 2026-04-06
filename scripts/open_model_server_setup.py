@@ -93,6 +93,7 @@ def shell_header(args: argparse.Namespace) -> List[str]:
         f'WEIGHTS_ROOT="${{WEIGHTS_ROOT:-{args.weights_root}}}"',
         f'OUTPUT_ROOT="${{OUTPUT_ROOT:-{args.output_root}}}"',
         f'HF_HOME="${{HF_HOME:-{args.hf_home}}}"',
+        'MMVGM_ROOT="${MMVGM_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"',
         'LOCAL_STAGE_ROOT="${LOCAL_STAGE_ROOT:-/tmp/${USER:-$(whoami)}/mmvgm-stage}"',
         'ENABLE_LOCAL_STAGE="${ENABLE_LOCAL_STAGE:-1}"',
         f'DATASET_ROOT="${{DATASET_ROOT:-{args.dataset_root}}}"',

@@ -125,7 +125,10 @@ The generated smoke-test helpers are intentionally conservative:
   optional post-step only if you also carry a small local patch: current
   upstream `wan/modules/model.py` still imports `flash_attention` directly, so
   on hosts without `nvcc` the practical fallback is to route those call sites
-  through the existing `attention()` wrapper.
+  through the existing `attention()` wrapper. The generated helper now applies
+  [scripts/apply_wan_attention_fallback.py](scripts/apply_wan_attention_fallback.py)
+  by default unless you set `WAN_APPLY_FLASH_ATTENTION_FALLBACK=0`, and it also
+  honors `OUTPUT_FILE=...` so you can reuse the same helper inside a batch run.
 - `sample_runs/mochi_cli.sh` now defaults to a lighter smoke configuration
   (`848x480`, `31` frames, `8` steps, fast-mode noise schedule), but it now
   defaults to a single visible GPU and fails fast on cards below roughly
@@ -156,6 +159,34 @@ The generated smoke-test helpers are intentionally conservative:
   required Hunyuan subtrees to node-local `/tmp` before invoking
   `generate.py`; set `ENABLE_LOCAL_STAGE=0` if you explicitly want to run from
   shared storage.
+
+For a repeatable Wan fallback patch outside the generated shell helper, run:
+
+```bash
+python scripts/apply_wan_attention_fallback.py \
+    --repo-root /u/nkp2mr/open-video-models/Wan2.1
+```
+
+If you want a small multi-prompt batch plus a ready-made staging helper for the
+MMVGM dataset skeleton, scaffold it with:
+
+```bash
+python scripts/open_model_batch.py \
+    --model-slug wan2.1-t2v-1.3b \
+    --prompt-file configs/open_model_prompt_batches/wan2.1-t2v-1.3b-small.txt \
+    --sample-helper /u/nkp2mr/MMVGM/server/open-models/sample_runs/wan_t2v_1_3b.sh \
+    --batch-root /u/nkp2mr/MMVGM/server/open-models/batches/wan2.1-t2v-1.3b-small \
+    --output-dir /bigtemp/nkp2mr/shared-benchmarks/open-video-model-samples/wan2.1-t2v-1.3b-small \
+    --dataset-dir /bigtemp/nkp2mr/shared-benchmarks/mmvgm-open-video-models-smoke/wan2.1-t2v-1.3b
+```
+
+That creates:
+
+- `prompts.tsv` with stable sample IDs and prompts
+- `run_batch.sh`, which round-robins prompts across `GPU_LIST=...`
+- `stage_to_dataset.sh`, which symlinks or copies finished `.mp4` files into a
+  chosen MMVGM dataset directory
+- `batch_manifest.json` for reproducibility
 
 
 ### Detection and Source tracing model dependencies
