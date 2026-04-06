@@ -122,7 +122,10 @@ The generated smoke-test helpers are intentionally conservative:
   and `--t5_cpu`, which matches the official single-GPU recommendation for the
   smaller Wan checkpoint. The generated `Wan2.1` checklist also preinstalls
   `torch` before the rest of the requirements and leaves `flash-attn` as an
-  optional post-step, because the upstream code falls back to PyTorch SDPA.
+  optional post-step only if you also carry a small local patch: current
+  upstream `wan/modules/model.py` still imports `flash_attention` directly, so
+  on hosts without `nvcc` the practical fallback is to route those call sites
+  through the existing `attention()` wrapper.
 - `sample_runs/mochi_cli.sh` now defaults to a lighter smoke configuration
   (`848x480`, `31` frames, `8` steps, fast-mode noise schedule), but it now
   defaults to a single visible GPU and fails fast on cards below roughly
